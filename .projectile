@@ -1,0 +1,8 @@
+-.#+
+-*__init__.py
+
+-.hypothesis
+-.cache
+-__pycache__
+
+-/.git
