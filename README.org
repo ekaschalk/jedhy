@@ -1,0 +1,8 @@
+* Jedhy
+
+Inspired by python's ~jedi~ static code analysis tool, ~jedhy~ provides basic
+support for autocompletion and documentation introspection for ~Hy~.
+
+It is used in Emacs [[https://github.com/hylang/hy-mode][hy-mode]] IDE which I maintain.
+Currently a scaled back version of jedhy is used - automated installation from
+pypy still needs to be implemented.
