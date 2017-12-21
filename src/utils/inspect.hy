@@ -6,48 +6,112 @@
   ;; [hy.core.shadow [*]] [hy.core.language [*]]
   )
 
-;; See https://github.com/hylang/hy/issues/1467
-(hy.eval '(import hy.macros))
+(hy.eval '(import hy.macros))  ; See https://github.com/hylang/hy/issues/1467
 
 
-;; * Predicates
+;; * Candidates
 
-(defn module?)
-(defn class?)
-(defn method?)
-(defn function?)
-(defn macro?)
+(defclass Candidate [object]
+  (defn --init-- [self symbol]
+    (setv self.symbol
+          (hy-symbol-unmangle symbol))
+    (setv self.mangled
+          (hy-symbol-mangle symbol)))
 
-;; * Source
+  #@(property
+      (defn compiler? [self]
+        "Is candidate a compile table construct?"
+        (in self.symbol hy.compiler.-compile-table)))
 
-(defn getdoc)
-(defn getfile)
-(defn getmodule)
-(defn getsourcelines)
+  #@(property
+      (defn macro? [candidate]
+        "Is candidate a macro?"
+        (in self.mangled (get hy.macros.-hy-macros None))))
 
-;; * Inspection
+  #@(property
+      (defn shadow? [candidate]
+        "Is candidate a shadowed operator?"
+        (in self.mangled (dir hy.core.shadow)))))
+
+;; * Annotations
+
+(defclass Annotation [object]
+  (defn --init-- [self candidate]
+    (setv self.candidate candidate)
+    (setv self.annotation (.annotate self candidate)))
+
+  #@(staticmethod
+      (defn -translate-class [klass]
+        "Return annotation given a name of a class."
+        (cond [(in klass ["function" "builtin_function_or_method"])
+               "def"]
+              [(= klass "type")
+               "class"]
+              [(= klass "module")
+               "module"]
+              [True
+               "instance"])))
+
+  (defn -annotate-builtin [candidate]
+    "Try to extract annotation searching builtins."
+    (try
+      (-> candidate
+         hy-symbol-mangle
+         builtins.eval
+         (. --class--)
+         (. --name--)
+         self.-translate-class)
+      (except [e Exception]
+        None)))
+
+  #@(classmethod
+      (defn annotate [cls candidate]
+        "Return annotation for a candidate."
+        ;;
+        (cond [(cls.-annotate-builtin candidate)]
+              ;; Ordered by lookup speed
+              [candidate.compiler?
+               "compiler"]
+              [candidate.shadow?
+               "shadowed"]
+              [candidate.macro?
+               "macro"])))
+
+  (defn --str-- [self]
+    "Format an annotation for company display."
+    (if self.annotation
+        (.format "<{} {}>" self.annotation self.candidate)
+        "")))
+
+;; * Parameters
 
 (defclass Paramater [object]
-  (def --init-- [self name &optional default]
-    (setv self.name name)
+  (def --init-- [self symbol &optional default]
+    (setv self.symbol symbol)
     (setv self.default default))
 
   (defn --str-- [self]
     (if self.default
-        self.name
-        (.format "[{} {}]" self.name self.default))))
+        self.symbol
+        (.format "[{} {}]" self.symbol self.default))))
 
 ;; * Signature
 ;; ** Internal
 
 (defclass Signature [object]
-  (defn --init-- [self name args defaults kwargs varargs varkw]
+  (defn --init-- [self func]
+    (setv argspec
+          (inspect.getfullargspec func))
+    (setv [args defaults kwargs]
+          ((juxt cls.-args-from cls.-defaults-from cls.-kwargs-from)
+            argspec))
+
     (setv self.func func)
     (setv self.args args)
     (setv self.defaults defaults)
     (setv self.kwargs kwargs)
-    (setv self.varargs varargs)
-    (setv self.varkw varkw))
+    (setv self.varargs argspec.varargs)
+    (setv self.varkw argspec.varkw))
 
   #@(staticmethod
       (defn -args-from [argspec]
@@ -123,17 +187,4 @@
              [[self.varargs] "#*"]
              [[self.varkw] "#**"]
              [self.kwargs "&kwonly"]]
-            (str)))
-
-  #@(classmethod
-      (defn build [cls func]
-        (setv argspec
-              (inspect.getfullargspec func))
-        (setv [args defaults kwargs]
-              ((juxt cls.-args-from cls.-defaults-from cls.-kwargs-from)
-                argspec))
-
-        (cls func args defaults kwargs
-             argspec.varargs argspec.varkw)))
-
-  )
+            (str))))
