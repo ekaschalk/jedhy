@@ -3,6 +3,7 @@
 
   hy hy.compiler hy.macros
 
+  [src.utils.format [name-or-string]]
   ;; [hy.core.shadow [*]] [hy.core.language [*]]
   )
 
@@ -18,27 +19,63 @@
     (setv self.mangled
           (hy-symbol-mangle symbol)))
 
-  #@(property
-      (defn compiler? [self]
-        "Is candidate a compile table construct?"
-        (in self.symbol hy.compiler.-compile-table)))
+  (defn compiler? [self]
+    "Is candidate a compile table construct?"
+    (in self.symbol hy.compiler.-compile-table))
 
-  #@(property
-      (defn macro? [self]
-        "Is candidate a macro?"
-        (in self.mangled (get hy.macros.-hy-macros None))))
+  (defn macro? [self]
+    "Is candidate a macro?"
+    (in self.mangled (get hy.macros.-hy-macros None)))
 
-  #@(property
-      (defn shadow? [self]
-        "Is candidate a shadowed operator?"
-        (in self.mangled (dir hy.core.shadow))))
+  (defn shadow? [self]
+    "Is candidate a shadowed operator?"
+    (in self.mangled (dir hy.core.shadow)))
 
-  #@(property
-      (defn python? [self]
-        (try (builtins.eval self.mangled)
-             (except [e Exception]
-               False))))
+  (defn evaled [self]
+    "Try to return evaluated candidate."
+    (try (builtins.eval self.mangled (globals))
+         (except [e NameError]
+           None)))
   )
+
+;; * Prefix
+
+(defclass Prefix [object]
+  (defn --init-- [self prefix]
+    (setv self.prefix prefix))
+  )
+
+
+(defclass Candidates [object]
+  (defn --init-- [self candidates]
+    (setv self.candidates candidates))
+
+  #@(classmethod
+      (defn build [cls]
+        (setv current-locals
+              (.keys (locals)))
+        (setv compiler-forms
+              hy.compiler.-compile-table)
+        (setv macros
+              (->> hy.macros.-hy-macros
+                 (.values)
+                 (map dict.keys)))
+
+        (setv candidates
+              (->> (chain current-locals compiler-forms macros)
+                 flatten
+                 (map (comp hy-symbol-unmangle name-or-string))
+                 distinct
+                 list))
+
+        (cls candidates)))
+
+  (defn attrs-for [self candidate]
+    (setv obj
+          (.evaled candidate))
+
+    (when obj
+      #t(-> obj dir (map hy-symbol-unmangle)))))
 
 ;; * Annotations
 
@@ -63,16 +100,16 @@
       (defn annotate [cls candidate]
         "Return annotation for a candidate."
         (setv obj
-              candidate.python?)
+              (.evaled candidate))
 
         ;; Ordered by lookup speed and expected frequency
         (cond [obj
                (cls.-translate-class obj.--class--.--name--)]
-              [candidate.compiler?
+              [(.compiler? candidate)
                "compiler"]
-              [candidate.shadow?
+              [(.shadow? candidate)
                "shadowed"]
-              [candidate.macro?
+              [(.macro? candidate)
                "macro"])))
 
   (defn --str-- [self]

@@ -215,14 +215,6 @@
      hy-symbol-mangle
      (get hy.macros.-hy-macros None)))
 
-(defn --HYDOC-get-python-obj [obj-name]
-  "Try to builtins.evaluate given obj-name."
-  (try
-    (-> obj-name
-       hy-symbol-mangle
-       (builtins.eval (globals)))
-    (except [e NameError] None)))
-
 (defn --HYDOC-extract-macro-eldoc [obj &optional full]
   "Get eldoc string for a macro."
   (when (--HYANNOTATE-macro? obj)
