@@ -24,14 +24,21 @@
         (in self.symbol hy.compiler.-compile-table)))
 
   #@(property
-      (defn macro? [candidate]
+      (defn macro? [self]
         "Is candidate a macro?"
         (in self.mangled (get hy.macros.-hy-macros None))))
 
   #@(property
-      (defn shadow? [candidate]
+      (defn shadow? [self]
         "Is candidate a shadowed operator?"
-        (in self.mangled (dir hy.core.shadow)))))
+        (in self.mangled (dir hy.core.shadow))))
+
+  #@(property
+      (defn python? [self]
+        (try (builtins.eval self.mangled)
+             (except [e Exception]
+               False))))
+  )
 
 ;; * Annotations
 
@@ -52,24 +59,15 @@
               [True
                "instance"])))
 
-  (defn -annotate-builtin [candidate]
-    "Try to extract annotation searching builtins."
-    (try
-      (-> candidate
-         hy-symbol-mangle
-         builtins.eval
-         (. --class--)
-         (. --name--)
-         self.-translate-class)
-      (except [e Exception]
-        None)))
-
   #@(classmethod
       (defn annotate [cls candidate]
         "Return annotation for a candidate."
-        ;;
-        (cond [(cls.-annotate-builtin candidate)]
-              ;; Ordered by lookup speed
+        (setv obj
+              candidate.python?)
+
+        ;; Ordered by lookup speed and expected frequency
+        (cond [obj
+               (cls.-translate-class obj.--class--.--name--)]
               [candidate.compiler?
                "compiler"]
               [candidate.shadow?
