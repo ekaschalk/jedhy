@@ -42,9 +42,23 @@
 
 (defclass Prefix [object]
   (defn --init-- [self prefix]
-    (setv self.prefix prefix))
-  )
+    (setv self.prefix prefix)
+    (setv [self.candidate
+           self.attr-prefix]
+          (.split-prefix self prefix)))
 
+  #@(staticmethod
+      (defn split-prefix [prefix]
+        "Split prefix on last dot accessor, returning an obj, attr pair."
+        (setv components
+              (.split prefix "."))
+
+        [(->> components butlast (.join ".") Candidate)
+         (->> components last)]))
+
+  #@(property
+      (defn top-level? [self]
+        (not self.candidate))))
 
 (defclass Candidates [object]
   (defn --init-- [self candidates]
@@ -64,18 +78,30 @@
         (setv candidates
               (->> (chain current-locals compiler-forms macros)
                  flatten
-                 (map (comp hy-symbol-unmangle name-or-string))
+                 (map (comp hy-symbol-unmangle
+                         (fn [obj] (if (instance? str obj) obj obj.--name--))))
                  distinct
                  list))
 
         (cls candidates)))
 
-  (defn attrs-for [self candidate]
+  (defn dir-of [self candidate]
     (setv obj
           (.evaled candidate))
 
-    (when obj
-      #t(-> obj dir (map hy-symbol-unmangle)))))
+    (and obj #t(-> obj dir (map hy-symbol-unmangle))))
+
+  (defn for [self prefix]
+    (setv candidates
+          (if prefix.top-level?
+              self.candidates
+              (.dir-of self prefix.candidate)))
+
+    #t(->> candidates
+        (filter
+          (fn [candidate] (.startswith candidate prefix.attr-prefix)))
+        (map
+          #$(+ candidate ".")))))
 
 ;; * Annotations
 
@@ -155,18 +181,16 @@
                   (-> argspec.defaults len (drop-last argspec.args) list)
                   argspec.args))
 
-        (when args
-          #t(map Parameter args))))
+        (and args #t(map Parameter args))))
 
   #@(classmethod
       (defn -defaults-from [cls argspec]
-        (setv args-with-defaults
+        (setv defaults
               (if (and argspec.args argspec.defaults)
                   (-> argspec cls.-args-from len (drop argspec.args) list)
                   argspec.defaults))
 
-        (when args-with-defaults
-          #t(map Parameter args-with-defaults argspec.defaults))))
+        (and defaults #t(map Parameter defaults argspec.defaults))))
 
   #@(staticmethod
       (defn -kwargsonly-from [argspec]
@@ -177,13 +201,14 @@
                      list)
                   argspec.kwonlyargs))
 
-        (when argspec.kwonlyargs
-          #t(map Parameter kwonlyargs))))
+        (and kwonlyargs #t(map Parameter kwonlyargs))))
 
   #@(staticmethod
       (defn -kwonlydefaults-from [argspec]
-        (when argspec.kwonlydefaults
-          #t(*map Parameter (.items argspec.kwonlydefaults)))))
+        (setv kwonlydefaults
+              (.items argspec.kwonlydefaults))
+
+        (and kwonlydefaults #t(*map Parameter kwonlydefaults))))
 
   #@(classmethod
       (defn -kwargs-from [cls argspec]
@@ -205,9 +230,8 @@
   #@(classmethod
       (defn -acc-lispy-repr [cls formatted-argspec [args opener]]
         ;; Want list of all None to fail on conditionals just like single None
-        (when args
-          (setv args
-                #t(remove none? args)))
+        (setv args
+              (and args #t(remove none? args)))
 
         (+ formatted-argspec
            (if (and formatted-argspec args) " " (str))
