@@ -6,6 +6,8 @@
   [src.utils.format [name-or-string]]
   ;; [hy.core.shadow [*]] [hy.core.language [*]]
   )
+(import [src.utils.macros [*]])
+(require [src.utils.macros [*]])
 
 (hy.eval '(import hy.macros))  ; See https://github.com/hylang/hy/issues/1467
 
@@ -56,52 +58,32 @@
         [(->> components butlast (.join ".") Candidate)
          (->> components last)]))
 
-  #@(property
-      (defn top-level? [self]
-        (not self.candidate))))
-
 (defclass Candidates [object]
   (defn --init-- [self]
     (setv self.candidates (.-collect-candidates self)))
 
   #@(staticmethod
       (defn -collect-candidates []
-        (setv current-locals
-              (.keys (locals)))
-        (setv compiler-forms
-              hy.compiler.-compile-table)
-        (setv macros
-              (->> hy.macros.-hy-macros
-                 (.values)
-                 (map dict.keys)))
-
-        (setv candidates
-              (->> (chain current-locals compiler-forms macros)
-                 flatten
-                 (map (comp hy-symbol-unmangle
-                         (fn [obj] (if (instance? str obj) obj obj.--name--))))
-                 distinct
-                 list))
-
-        candidates))
+        #t(->> hy.macros.-hy-macros
+            (.values)
+            (map dict.keys)
+            (chain (.keys locals) hy.compiler.-compile-table)
+            flatten
+            (map #%(if (instance? str %1) %1 %1.--name--))
+            (map hy-symbol-unmangle)
+            distinct)))
 
   (defn -dir-of [self candidate]
-    (setv obj
-          (.evaled candidate))
-
-    (and obj #t(-> obj dir (map hy-symbol-unmangle))))
+    #t(some-> candidate
+           (.evaled)
+           dir
+           (map hy-symbol-unmangle)))
 
   (defn --call-- [self prefix]
-    (setv candidates
-          (if prefix.top-level?
-              self.candidates
-              (.dir-of self prefix.candidate)))
-
-    #t(->> candidates
-        (filter
-          (fn [candidate] (.startswith candidate prefix.attr-prefix)))
-        (map
-          #$(+ candidate ".")))))
+    #t(some->> self.candidates
+            (or (.dir-of self.prefix.candidate))
+            (filter #%(.startswith %1 prefix.attr-prefix))
+            (map #$(+ candidate ".")))))
 
 ;; * Annotations
 
@@ -176,39 +158,31 @@
 
   #@(staticmethod
       (defn -args-from [argspec]
-        (setv args
-              (if (and argspec.args argspec.defaults)
-                  (-> argspec.defaults len (drop-last argspec.args) list)
-                  argspec.args))
-
-        (and args #t(map Parameter args))))
+        #t(some->>
+          (-> argspec.defaults len (drop-last argspec.args) list)
+          (or argspec.args argspec.defaults)
+          (map Parameter))))
 
   #@(classmethod
       (defn -defaults-from [cls argspec]
-        (setv defaults
-              (if (and argspec.args argspec.defaults)
-                  (-> argspec cls.-args-from len (drop argspec.args) list)
-                  argspec.defaults))
-
-        (and defaults #t(map Parameter defaults argspec.defaults))))
+        #t(some->>
+          (-> argspec cls.-args-from len (drop argspec.args) list)
+          (or argspec.args argspec.defaults)
+          (#%(map Parameter %1 argspec.defaults)))))
 
   #@(staticmethod
       (defn -kwargsonly-from [argspec]
-        (setv kwonlyargs
-              (if (and argspec.kwonlyargs argspec.kwonlydefaults)
-                  (->> argspec.kwonlyargs
-                     (remove (fn [x] (in x (.keys argspec.kwonlydefaults))))
-                     list)
-                  argspec.kwonlyargs))
-
-        (and kwonlyargs #t(map Parameter kwonlyargs))))
+        #t(some->>
+           (remove #%(in %1 (.keys argspec.kwonlydefaults)) argspec.kwonlyargs)
+           (or argspec.kwonlyargs argspec.kwonlydefaults)
+           (map Parameter))))
 
   #@(staticmethod
       (defn -kwonlydefaults-from [argspec]
-        (setv kwonlydefaults
-              (.items argspec.kwonlydefaults))
-
-        (and kwonlydefaults #t(*map Parameter kwonlydefaults))))
+        #t(some->>
+           argspec.kwonlydefaults
+           (.items)
+           (*map Parameter))))
 
   #@(classmethod
       (defn -kwargs-from [cls argspec]
