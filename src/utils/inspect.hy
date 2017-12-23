@@ -7,6 +7,43 @@
 
   [src.docstrings [builtin-docs-to-lispy-docs]])
 
+;; Organization notes:
+;; Parameter => Signature, docstrings
+;; Candidate => Prefix
+;; Signature => Introspect
+;; Prefix, Completer, Annotation, Introspect => None
+
+;; ---
+
+;; Candidate+Prefix
+;; Parameter+Signature
+;; docstrings
+
+;; Introspect
+;; Completer
+;; Annotation
+
+;; Add annotate/inspect funcs by possibly collapsing their classes to modules
+
+(defclass Actions
+  (defn --init-- [self]
+    (setv self.completer (Completer)))
+
+  (defn complete [self prefix-str]
+    (-> prefix-str
+       Prefix
+       self.completer))
+
+  (defn annotate [self candidate-str]
+    (-> candidate-str
+       Candidate
+       annotate))
+
+  (defn docs [self candidate-str]
+    (-> candidate-str
+       Candidate
+       (.get-obj)
+       inspect)))
 
 ;; * Candidate
 
@@ -40,14 +77,17 @@
 
   (defn get-obj [self]
     "Get object for underlying candidate."
-    (or (.macro? self) (.evaled? self)))
+    (or (.compiler? self) (.macro? self) (.evaled? self)))
 
   (defn attributes [self]
+    "Return attributes for obj if they exist."
     #t(some-> self (.evaled?) dir (map hy-symbol-unmangle))))
 
 ;; * Prefix
 
 (defclass Prefix [object]
+  "A completion candidate."
+
   (defn --init-- [self prefix]
     (setv self.prefix prefix)
     (setv [self.candidate
@@ -66,11 +106,14 @@
 ;; * Completer
 
 (defclass Completer [object]
+  "Instantiates global candidates, then called with prefixes for completion."
+
   (defn --init-- [self]
     (setv self.candidates (.-collect-globals self)))
 
   #@(staticmethod
       (defn -collect-globals []
+        "Collect globals from (locals), macros, and the compile-table."
         #t(->> hy.macros.-hy-macros
             (.values)
             (map dict.keys)
@@ -81,6 +124,7 @@
             distinct)))
 
   (defn --call-- [self prefix]
+    "Get candidates for a given Prefix."
     (setv candidates
           (or (.attributes self.prefix.candidate) self.candidates))
 
