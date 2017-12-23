@@ -1,3 +1,5 @@
+(require [src.utils.macros [*]])
+
 (defn -translate-class [klass]
   "Return annotation given a name of a class."
   (cond [(in klass ["function" "builtin_function_or_method"])

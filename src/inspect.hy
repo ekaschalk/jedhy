@@ -1,9 +1,9 @@
 (require [src.utils.macros [*]])
 (import
-  builtins inspect
+  inspect
 
-  hy hy.compiler hy.macros
-  ;; [hy.core.shadow [*]] [hy.core.language [*]]
+  hy
+  [hy.lex.parser [hy-symbol-unmangle]]
 
   [src.docstrings [builtin-docs-to-lispy-docs]])
 

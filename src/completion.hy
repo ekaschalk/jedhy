@@ -1,4 +1,8 @@
-;; * Completer
+(require [src.utils.macros [*]])
+(import
+  hy hy.compiler hy.macros
+  [hy.lex.parser [hy-symbol-unmangle]])
+
 
 (defclass Completer [object]
   "Instantiates global candidates, then called with prefixes for completion."

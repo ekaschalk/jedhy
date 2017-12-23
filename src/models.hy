@@ -1,3 +1,12 @@
+(require [src.utils.macros [*]])
+(import
+  builtins
+
+  hy hy.compiler hy.macros
+  [hy.lex.parser [hy-symbol-mangle hy-symbol-unmangle]]
+  ;; [hy.core.shadow [*]] [hy.core.language [*]]
+  )
+
 ;; * Candidate
 
 (defclass Candidate [object]
