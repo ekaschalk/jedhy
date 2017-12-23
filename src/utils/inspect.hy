@@ -1,18 +1,15 @@
 (import
-  builtins inspect types
+  builtins inspect
 
   hy hy.compiler hy.macros
 
-  [src.utils.format [name-or-string]]
   ;; [hy.core.shadow [*]] [hy.core.language [*]]
   )
 (import [src.utils.macros [*]])
 (require [src.utils.macros [*]])
 
-(hy.eval '(import hy.macros))  ; See https://github.com/hylang/hy/issues/1467
 
-
-;; * Candidates
+;; * Candidate
 
 (defclass Candidate [object]
   (defn --init-- [self symbol]
@@ -28,6 +25,7 @@
 
   (defn macro? [self]
     "Is candidate a macro and return it."
+    (hy.eval '(import hy.macros))  ; See https://github.com/hylang/hy/issues/1467
     (try (get hy.macros.-hy-macros None self.mangled)
          (except [e KeyError] None)))
 
@@ -41,9 +39,9 @@
     (try (builtins.eval self.mangled (globals))
          (except [e NameError] None)))
 
-  (defn eldoc [self]
-    (.-extract-eldoc self (or (.macro? self) (.evaled? self))))
-  )
+  (defn obj [self]
+    "Get object for candidate."
+    (or (.macro? self) (.evaled? self))))
 
 ;; * Prefix
 
@@ -62,6 +60,8 @@
 
         [(->> components butlast (.join ".") Candidate)
          (->> components last)]))
+
+;; * Candidates
 
 (defclass Candidates [object]
   (defn --init-- [self]
@@ -144,15 +144,13 @@
         (.format "[{} {}]" self.symbol self.default))))
 
 ;; * Signature
-;; ** Internal
 
 (defclass Signature [object]
   (defn --init-- [self func]
     (setv argspec
           (inspect.getfullargspec func))
     (setv [args defaults kwargs]
-          ((juxt cls.-args-from cls.-defaults-from cls.-kwargs-from)
-            argspec))
+          ((juxt cls.-args-from cls.-defaults-from cls.-kwargs-from) argspec))
 
     (setv self.func func)
     (setv self.args args)
@@ -195,16 +193,17 @@
            ((juxt cls.-kwargsonly-from cls.-kwonlydefaults-from) argspec)
            flatten)))
 
-;; ** Formatting
-
   #@(staticmethod
       (defn -format-args [args opener]
-        (if args
-            (+ (if opener
-                   (+ opener " ")
-                   (str))
-               (.join " " args))
-            (str))))
+        (unless args
+          (return ""))
+
+        (setv opener
+              (if opener (+ opener " ") ""))
+
+        (->> args
+           (.join " ")
+           (+ opener))))
 
   #@(classmethod
       (defn -acc-lispy-repr [cls formatted-argspec [args opener]]
@@ -216,8 +215,6 @@
            (if (and formatted-argspec args) " " (str))
            (cls.-format-args args opener))))
 
-;; ** Exposes
-
   (defn lispy-format [self]
     (reduce self.-acc-lispy-repr
             [[self.args None]
@@ -225,4 +222,14 @@
              [[self.varargs] "#*"]
              [[self.varkw] "#**"]
              [self.kwargs "&kwonly"]]
-            (str))))
+            "")))
+
+;; * Eldoc
+
+(defclass Introspect [object]
+  (defn --init-- [self candidate]
+    (setv self.candidate candidate))
+
+  (defn eldoc [self]
+    (.-extract-eldoc self (or (.macro? self.candidate) (.evaled? self.candidate))))
+  )

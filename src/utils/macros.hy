@@ -1,3 +1,7 @@
+(deftag t [form]
+  "Cast evaluated form to a tuple. Useful via eg. #t(-> x f1 f2 ...)."
+  `(tuple ~form))
+
 (defmacro -opener-or-none-first [opener]
   `(fn [&rest x &kwargs y]
      (if (none? (first x))

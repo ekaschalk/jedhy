@@ -125,36 +125,3 @@
           (+ "method-wrapper"
              (cut docs (.index docs ":")))))
   docs)
-
-;; ** Macro Eldoc
-
-(defn --HYDOC-get-macro-obj [obj-name]
-  "Get the lambda for the given macro-name."
-  (->> obj-name
-     hy-symbol-mangle
-     (get hy.macros.-hy-macros None)))
-
-(defn --HYDOC-extract-macro-eldoc [obj &optional full]
-  "Get eldoc string for a macro."
-  (when (--HYANNOTATE-macro? obj)
-    (->> obj
-       --HYDOC-get-macro-obj
-       (--HYDOC-extract-eldoc-string :full full))))
-
-;; ** Python Eldoc
-
-(defn --HYDOC-extract-python-eldoc [obj-name &optional full]
-  "Build eldoc string for python string.
-
-Not all defuns can be argspeced - eg. C defuns."
-  (-> obj-name
-     --HYDOC-get-python-obj
-     (--HYDOC-extract-eldoc-string :full full)))
-
-;; ** Driver
-
-(defn --HYDOC [obj &optional full]
-  "Get eldoc string for any obj."
-  (cond [(--HYDOC-extract-macro-eldoc obj :full full)]
-        [(--HYDOC-extract-python-eldoc obj :full full)]
-        [True ""]))
