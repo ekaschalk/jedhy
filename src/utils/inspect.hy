@@ -2,10 +2,8 @@
   builtins inspect
 
   hy hy.compiler hy.macros
-
   ;; [hy.core.shadow [*]] [hy.core.language [*]]
   )
-(import [src.utils.macros [*]])
 (require [src.utils.macros [*]])
 
 

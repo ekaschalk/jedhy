@@ -1,11 +1,18 @@
+(import functools)
+
 (require [hy.extra.anaphoric [*]])
 
-;; TODO Implement zipwith
-;; TODO Add the #$ tagmacro
+;; * Tag Macros
 
 (deftag t [form]
   "Cast evaluated form to a tuple. Useful via eg. #t(-> x f1 f2 ...)."
   `(tuple ~form))
+
+(deftag $ [form]
+  "Partially apply a form eg. (#$(map inc) [1 2 3])."
+  `(functools.partial ~@form))
+
+;; * Some-> and Some->> threads
 
 (defmacro -opener-or-none-first [opener]
   `(fn [&rest x &kwargs y]

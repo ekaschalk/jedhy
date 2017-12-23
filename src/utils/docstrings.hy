@@ -1,5 +1,5 @@
 "Convert formatting of builtins docstrings first-line to lispy representation."
-(import [src.utils.macros [*]])
+
 (require [src.utils.macros [*]])
 
 ;; TODO Requires `Parameter`
@@ -47,11 +47,14 @@
   (setv docs
         (.format "{}: ({}" pre-args post-args))
   (setv docs
-        (zipwith docs.replace [["..." "#* args"]
-                               ["*args" "#* args"]
-                               ["**kwargs" "#** kwargs"]
-                               ["\n" "newline"]
-                               ["-->" "return"]]))
+        (*map docs.replace
+              (->
+                [["..." "#* args"]
+                 ["*args" "#* args"]
+                 ["**kwargs" "#** kwargs"]
+                 ["\n" "newline"]
+                 ["-->" "return"]]
+                zip chain.from-iterable)))
 
   (setv [pre-args args post-args]
         (-split-docs docs))
