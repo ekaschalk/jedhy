@@ -228,20 +228,72 @@
   (defn --init-- [self obj]
     (setv self.obj obj))
 
-  (defn lambda? [self]
-    "Is object a lambda?"
-    (= self.obj.--name-- "lambda"))
+  #@(property
+      (defn lambda? [self]
+        "Is object a lambda?"
+        (= self.obj.--name-- "lambda")))
 
-  (defn class? [self]
-    "Is object a class?"
-    (inspect.isclass self.obj))
+  #@(property
+      (defn class? [self]
+        "Is object a class?"
+        (inspect.isclass self.obj)))
 
-  (defn method-wrapper? [self]
-    "Is object of type 'method-wrapper'?"
-    (instance? (type print.--str--) self.obj))
+  #@(property
+      (defn method-wrapper? [self]
+        "Is object of type 'method-wrapper'?"
+        (instance? (type print.--str--) self.obj)))
 
   (defn signature [self]
     "Return object's signature if it exists."
     (try (Signature self.obj)
          (except [e TypeError] None)))
+
+  (defn -docs-first-line [self]
+    (or (-> self.obj.--doc-- (.splitlines) first) ""))
+
+  #@(property
+      (defn obj-name [self]
+        (if self.lambda?
+            "<lambda>"
+            (hy-symbol-unmangle func.--name--))))
+
+  #@(property
+      (defn -args-docs-delim [self]
+        (or "" (and self.obj.--doc-- " - "))))
+
+  #@(staticmethod
+      (defn -cut-self-maybe [docs]
+        (when (or self.class? self.method-wrapper?)
+          (-> docs
+             (.replace "self " "")
+             (.replace "self" "")))
+        docs))
+
+  #@(staticmethod
+      (defn -cut-obj-name-maybe [docs]
+        (when self.method-wrapper?
+          (+ "method-wrapper"
+             (cut docs (.index docs ":"))))
+        docs))
+
+  (defn convert-builtin-docs-to-lispy-repr [self]
+    (setv docs self.-docs-first-line))
+
+  (defn raw-eldoc [self]
+    (setv signature
+          (.signature self))
+
+    (if signature
+        (.format "{name}: ({args}){delim}{docs}"
+                 :name self.obj-name
+                 :args signature
+                 :delim self.-args-docs-delim
+                 :docs self.-docs-first-line)
+        (.convert-builtin-docs-to-lispy-repr)))
+
+  (defn eldoc [self]
+    (-> self
+       (.raw-eldoc)
+       self.-cut-self-maybe
+       self.-cut-obj-name-maybe))
   )
