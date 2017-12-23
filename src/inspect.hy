@@ -10,7 +10,7 @@
 
 ;; * Parameters
 
-(defclass Paramater [object]
+(defclass Parameter [object]
   (def --init-- [self symbol &optional default]
     (setv self.symbol symbol)
     (setv self.default default))
@@ -99,7 +99,7 @@
              [self.kwargs "&kwonly"]]
             "")))
 
-;; * Introspect
+;; * Inspect
 ;; ** Internal
 
 (defclass Inspect [object]
@@ -111,20 +111,20 @@
 
   #@(property
       (defn -args-docs-delim [self]
-        (or "" (and self.obj.--doc-- " - "))))
+        (or (and self.obj.--doc-- " - ") "")))
 
   (defn -cut-obj-name-maybe [self docs]
-    (when (or self.class? self.method-wrapper?)
-      (-> docs
-         (.replace "self " "")
-         (.replace "self" "")))
-    docs)
+    (if (or self.class? self.method-wrapper?)
+        (-> docs
+           (.replace "self " "")
+           (.replace "self" ""))
+        docs))
 
   (defn -cut-method-wrapper-maybe [self docs]
-    (when self.method-wrapper?
-      (+ "method-wrapper"
-         (cut docs (.index docs ":"))))
-    docs)
+    (if self.method-wrapper?
+        (+ "method-wrapper"
+           (cut docs (.index docs ":")))
+        docs))
 
   (defn -format-docs [self docs]
     (-> docs
