@@ -33,14 +33,16 @@
 
   (some -at-arg-with-default? (enumerate args)))
 
-(defn insert-optional [args]
+(defn -insert-optional [args]
+  "Insert &optional into list of args strings."
   (setv optional-idx
         (-optional-arg-idx args))
   (unless (none? optional-idx)
     (.insert args optional-idx "&optional"))
   args)
 
-(defn docstrings-to-lispy [docs]
+(defn builtin-docs-to-lispy-docs [docs]
+  "Convert built-in-styled docs string into a lispy-format."
   (setv [pre-args - post-args]
         (.partition docs "("))
 
@@ -63,7 +65,7 @@
         (->> (.split args ",")
            (map str.strip)
            list
-           insert-optional
+           -insert-optional
            (map -argstring-to-param)
            (map str)
            (#$(str.join " "))))

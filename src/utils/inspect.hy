@@ -3,7 +3,8 @@
 
   hy hy.compiler hy.macros
   ;; [hy.core.shadow [*]] [hy.core.language [*]]
-  )
+
+  [src.docstrings [builtin-docs-to-lispy-docs]])
 (require [src.utils.macros [*]])
 
 
@@ -221,10 +222,39 @@
             "")))
 
 ;; * Introspect
+;; ** Internal
 
 (defclass Introspect [object]
   (defn --init-- [self obj]
     (setv self.obj obj))
+
+  (defn -docs-first-line [self]
+    (or (-> self.obj.--doc-- (.splitlines) first) ""))
+
+  #@(property
+      (defn obj-name [self]
+        (if self.lambda?
+            "<lambda>"
+            (hy-symbol-unmangle func.--name--))))
+
+  #@(property
+      (defn -args-docs-delim [self]
+        (or "" (and self.obj.--doc-- " - "))))
+
+  (defn -cut-self-maybe [self docs]
+    (when (or self.class? self.method-wrapper?)
+      (-> docs
+         (.replace "self " "")
+         (.replace "self" "")))
+    docs)
+
+  (defn -cut-obj-name-maybe [self docs]
+    (when self.method-wrapper?
+      (+ "method-wrapper"
+         (cut docs (.index docs ":"))))
+    docs)
+
+;; ** Properties
 
   #@(property
       (defn lambda? [self]
@@ -246,36 +276,7 @@
     (try (Signature self.obj)
          (except [e TypeError] None)))
 
-  (defn -docs-first-line [self]
-    (or (-> self.obj.--doc-- (.splitlines) first) ""))
-
-  #@(property
-      (defn obj-name [self]
-        (if self.lambda?
-            "<lambda>"
-            (hy-symbol-unmangle func.--name--))))
-
-  #@(property
-      (defn -args-docs-delim [self]
-        (or "" (and self.obj.--doc-- " - "))))
-
-  #@(staticmethod
-      (defn -cut-self-maybe [docs]
-        (when (or self.class? self.method-wrapper?)
-          (-> docs
-             (.replace "self " "")
-             (.replace "self" "")))
-        docs))
-
-  #@(staticmethod
-      (defn -cut-obj-name-maybe [docs]
-        (when self.method-wrapper?
-          (+ "method-wrapper"
-             (cut docs (.index docs ":"))))
-        docs))
-
-  (defn convert-builtin-docs-to-lispy-repr [self]
-    (setv docs self.-docs-first-line))
+;; ** Eldoc
 
   (defn raw-eldoc [self]
     (setv signature
@@ -287,10 +288,9 @@
                  :args signature
                  :delim self.-args-docs-delim
                  :docs self.-docs-first-line)
-        (.convert-builtin-docs-to-lispy-repr)))
+        (builtin-docs-to-lispy-docs self.-docs-first-line)))
 
   (defn eldoc [self]
     (-> (.raw-eldoc self)
        self.-cut-self-maybe
-       self.-cut-obj-name-maybe))
-  )
+       self.-cut-obj-name-maybe)))
