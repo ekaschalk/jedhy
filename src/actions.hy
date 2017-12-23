@@ -2,9 +2,10 @@
 
 (require [src.utils.macros [*]])
 (import
-  ;; Completer, Prefix, Candidate
-  ;; annotate, inspect
-  )
+  [src.annotations [annotate]]
+  [src.completion [Completer]]
+  [src.inspect [inspect]]
+  [src.models [Candidate Prefix]])
 
 (defclass Actions
   (defn --init-- [self]
