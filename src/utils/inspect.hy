@@ -61,11 +61,11 @@
         (not self.candidate))))
 
 (defclass Candidates [object]
-  (defn --init-- [self candidates]
-    (setv self.candidates candidates))
+  (defn --init-- [self]
+    (setv self.candidates (.-collect-candidates self)))
 
-  #@(classmethod
-      (defn build [cls]
+  #@(staticmethod
+      (defn -collect-candidates []
         (setv current-locals
               (.keys (locals)))
         (setv compiler-forms
@@ -83,15 +83,15 @@
                  distinct
                  list))
 
-        (cls candidates)))
+        candidates))
 
-  (defn dir-of [self candidate]
+  (defn -dir-of [self candidate]
     (setv obj
           (.evaled candidate))
 
     (and obj #t(-> obj dir (map hy-symbol-unmangle))))
 
-  (defn for [self prefix]
+  (defn --call-- [self prefix]
     (setv candidates
           (if prefix.top-level?
               self.candidates
