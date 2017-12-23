@@ -39,8 +39,8 @@
     (try (builtins.eval self.mangled (globals))
          (except [e NameError] None)))
 
-  (defn obj [self]
-    "Get object for candidate."
+  (defn get-obj [self]
+    "Get object for underlying candidate."
     (or (.macro? self) (.evaled? self))))
 
 ;; * Prefix
@@ -147,8 +147,10 @@
 
 (defclass Signature [object]
   (defn --init-- [self func]
-    (setv argspec
-          (inspect.getfullargspec func))
+    (try (setv argspec
+               (inspect.getfullargspec func))
+         (except (raise TypeError "Unsupported callable for Signature.")))
+
     (setv [args defaults kwargs]
           ((juxt cls.-args-from cls.-defaults-from cls.-kwargs-from) argspec))
 
@@ -156,8 +158,8 @@
     (setv self.args args)
     (setv self.defaults defaults)
     (setv self.kwargs kwargs)
-    (setv self.varargs argspec.varargs)
-    (setv self.varkw argspec.varkw))
+    (setv self.varargs (and argspec.varargs [argspec.varargs]))
+    (setv self.varkw (and argspec.varkw [argspec.varkw])))
 
   #@(staticmethod
       (defn -args-from [argspec]
@@ -207,29 +209,39 @@
 
   #@(classmethod
       (defn -acc-lispy-repr [cls formatted-argspec [args opener]]
-        ;; Want list of all None to fail on conditionals just like single None
-        (setv args
-              (and args #t(remove none? args)))
-
         (+ formatted-argspec
            (if (and formatted-argspec args) " " (str))
            (cls.-format-args args opener))))
 
-  (defn lispy-format [self]
+  (defn --str-- [self]
     (reduce self.-acc-lispy-repr
             [[self.args None]
              [self.defaults "&optional"]
-             [[self.varargs] "#*"]
-             [[self.varkw] "#**"]
+             [self.varargs "#*"]
+             [self.varkw "#**"]
              [self.kwargs "&kwonly"]]
             "")))
 
-;; * Eldoc
+;; * Introspect
 
 (defclass Introspect [object]
-  (defn --init-- [self candidate]
-    (setv self.candidate candidate))
+  (defn --init-- [self obj]
+    (setv self.obj obj))
 
-  (defn eldoc [self]
-    (.-extract-eldoc self (or (.macro? self.candidate) (.evaled? self.candidate))))
+  (defn lambda? [self]
+    "Is object a lambda?"
+    (= self.obj.--name-- "lambda"))
+
+  (defn class? [self]
+    "Is object a class?"
+    (inspect.isclass self.obj))
+
+  (defn method-wrapper? [self]
+    "Is object of type 'method-wrapper'?"
+    (instance? (type print.--str--) self.obj))
+
+  (defn signature [self]
+    "Return object's signature if it exists."
+    (try (Signature self.obj)
+         (except [e TypeError] None)))
   )

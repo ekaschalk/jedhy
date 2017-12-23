@@ -1,3 +1,5 @@
+(require [hy.extra.anaphoric [*]])
+
 (deftag t [form]
   "Cast evaluated form to a tuple. Useful via eg. #t(-> x f1 f2 ...)."
   `(tuple ~form))

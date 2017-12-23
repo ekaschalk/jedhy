@@ -1,14 +1,6 @@
 ;; * Hydoc
 ;; ** Extract Eldoc String
 
-(defn --HYDOC-first-line [s]
-  "Get first line of a given string."
-  (-> s (.splitlines) first))
-
-(defn --HYDOC-butfirst-line [s]
-  "Get but the first line of a given string."
-  (-> s (.splitlines) rest))
-
 (defn --HYDOC-extract-docstring [func &optional full]
   "Format a docstring (first line) for Eldoc or hyconda buffer (full)."
   (cond [(not func.--doc--)
@@ -19,7 +11,7 @@
          (->> func.--doc-- (.splitlines) (.join "\n") (+ "\n"))]
 
         [True
-         (--HYDOC-first-line func.--doc--)]))
+         (-> func.--doc-- (.splitlines) first)]))
 
 ;; ** Builtin to Lispy Formatting
 
