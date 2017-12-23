@@ -1,85 +1,4 @@
 ;; * Hydoc
-;; ** Argspec Extraction
-
-(defn --HYDOC-args [argspec]
-  "Extract standard positional arguments from argspec."
-  (if (and argspec.args argspec.defaults)
-      (-> argspec.defaults
-         len
-         (drop-last argspec.args)
-         list)
-      argspec.args))
-
-(defn --HYDOC-defaults [argspec]
-  "Extract &optional arguments from argspec with possibly their default."
-  (when argspec.defaults
-    (->> (if (and argspec.args argspec.defaults)
-           (-> argspec
-              --HYDOC-args
-              len
-              (drop argspec.args)
-              list)
-           argspec.defaults)
-       (zip argspec.defaults)
-       (*map (fn [default arg]
-               (if (none? default)
-                   arg
-                   (.format "[{} {}]" arg default))))
-       list)))
-
-(defn --HYDOC-kwonlyargs [argspec]
-  "Extract :keyword arguments without a default from argspec."
-  (if (and argspec.kwonlyargs argspec.kwonlydefaults)
-      (->> argspec.kwonlyargs
-         (remove (fn [x] (in x (.keys argspec.kwonlydefaults))))
-         list)
-      argspec.kwonlyargs))
-
-(defn --HYDOC-kwonlydefaults [argspec]
-  "Extract :keyword arguments with their default from argspec."
-  (if (and argspec.kwonlyargs argspec.kwonlydefaults)
-      (->> argspec.kwonlydefaults
-         (.items)
-         (*map (fn [k v] (.format "[{} {}]" k v)))
-         list)
-      argspec.kwonlydefaults))
-
-(defn --HYDOC-kwargs [argspec]
-  (-> argspec
-     ((juxt --HYDOC-kwonlyargs --HYDOC-kwonlydefaults))
-     flatten))
-
-;; ** Format Argspec
-
-(defn --HYDOC-acc-formatted-argspec [formatted-argspec [args arg-opener]]
-  "Accumulator for adding formatted argspec components."
-  (when args
-    ;; Want list of all None to fail on conditionals just like single None
-    (setv args
-          (->> args (remove none?) list)))
-
-  (+ formatted-argspec
-     (if (and formatted-argspec args) " " "")
-     (if args
-         (+ (if arg-opener (+ arg-opener " ") "")
-            (.join " " args))
-         "")))
-
-(defn --HYDOC-extract-lispy-argspec [func]
-  "Lispy version of formatted getfullargspec covering all defun kwords."
-  (setv argspec
-        (inspect.getfullargspec func))
-  (setv [args defaults kwargs]
-        ((juxt --HYDOC-args --HYDOC-defaults --HYDOC-kwargs) argspec))
-
-  (reduce --HYDOC-acc-formatted-argspec
-          [""
-           [args None]
-           [defaults "&optional"]
-           [[argspec.varargs] "#*"]
-           [[argspec.varkw] "#**"]
-           [kwargs "&kwonly"]]))
-
 ;; ** Extract Eldoc String
 
 (defn --HYDOC-first-line [s]
@@ -218,7 +137,9 @@
 (defn --HYDOC-extract-macro-eldoc [obj &optional full]
   "Get eldoc string for a macro."
   (when (--HYANNOTATE-macro? obj)
-    (--HYDOC-format-eldoc-string obj (--HYDOC-get-macro-obj obj) :full full)))
+    (->> obj
+       --HYDOC-get-macro-obj
+       (--HYDOC-extract-eldoc-string :full full))))
 
 ;; ** Python Eldoc
 
@@ -229,21 +150,6 @@ Not all defuns can be argspeced - eg. C defuns."
   (-> obj-name
      --HYDOC-get-python-obj
      (--HYDOC-extract-eldoc-string :full full)))
-
-        ;; (except [e TypeError]
-        ;;   (->> obj
-        ;;      inspect.getdoc
-        ;;      --HYDOC-first-line
-        ;;      (+ (.format "(Builtin) {}: " obj.--name--)))
-        ;;   ;; (when full
-        ;;   ;;   "")
-        ;;   ))
-            ;; (setv doc
-            ;;       (+ doc
-            ;;          "\n"
-            ;;          (->> full-doc
-            ;;             --HYDOC-butfirst-line
-            ;;             (.join "")))))))
 
 ;; ** Driver
 

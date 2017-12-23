@@ -22,22 +22,27 @@
           (hy-symbol-mangle symbol)))
 
   (defn compiler? [self]
-    "Is candidate a compile table construct?"
-    (in self.symbol hy.compiler.-compile-table))
+    "Is candidate a compile table construct and return it."
+    (try (get hy.compiler.-compile-table self.symbol)
+         (except [e KeyError] None)))
 
   (defn macro? [self]
-    "Is candidate a macro?"
-    (in self.mangled (get hy.macros.-hy-macros None)))
+    "Is candidate a macro and return it."
+    (try (get hy.macros.-hy-macros None self.mangled)
+         (except [e KeyError] None)))
 
   (defn shadow? [self]
-    "Is candidate a shadowed operator?"
-    (in self.mangled (dir hy.core.shadow)))
+    "Is candidate a shadowed operator and return it."
+    (try (get (dir hy.core.shadow) self.mangled)
+         (except [e KeyError] None)))
 
-  (defn evaled [self]
-    "Try to return evaluated candidate."
+  (defn evaled? [self]
+    "Is candidate evaluatable and return it."
     (try (builtins.eval self.mangled (globals))
-         (except [e NameError]
-           None)))
+         (except [e NameError] None)))
+
+  (defn eldoc [self]
+    (.-extract-eldoc self (or (.macro? self) (.evaled? self))))
   )
 
 ;; * Prefix
@@ -75,7 +80,7 @@
 
   (defn -dir-of [self candidate]
     #t(some-> candidate
-           (.evaled)
+           (.evaled?)
            dir
            (map hy-symbol-unmangle)))
 
@@ -108,7 +113,7 @@
       (defn annotate [cls candidate]
         "Return annotation for a candidate."
         (setv obj
-              (.evaled candidate))
+              (.evaled? candidate))
 
         ;; Ordered by lookup speed and expected frequency
         (cond [obj
