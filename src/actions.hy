@@ -4,7 +4,7 @@
 (import
   [src.annotations [annotate]]
   [src.completion [Completer]]
-  [src.inspect [inspect]]
+  [src.inspect [Inspect]]
   [src.models [Candidate Prefix]])
 
 (defclass Actions
@@ -33,4 +33,5 @@
     (-> candidate-str
        Candidate
        (.get-obj)
-       inspect)))
+       Inspect
+       (.docs))))

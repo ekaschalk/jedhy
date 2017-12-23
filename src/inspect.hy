@@ -1,4 +1,5 @@
 (require [src.utils.macros [*]])
+(require [hy.extra.anaphoric [*]])
 (import
   inspect
 
@@ -40,16 +41,16 @@
   #@(staticmethod
       (defn -args-from [argspec]
         #t(some->>
-          (-> argspec.defaults len (drop-last argspec.args) list)
-          (or argspec.args argspec.defaults)
-          (map Parameter))))
+           (-> argspec.defaults len (drop-last argspec.args) list)
+           (or argspec.args argspec.defaults)
+           (map Parameter))))
 
   #@(classmethod
       (defn -defaults-from [cls argspec]
         #t(some->>
-          (-> argspec cls.-args-from len (drop argspec.args) list)
-          (or argspec.args argspec.defaults)
-          (#%(map Parameter %1 argspec.defaults)))))
+           (-> argspec cls.-args-from len (drop argspec.args) list)
+           (or argspec.args argspec.defaults)
+           (#%(map Parameter %1 argspec.defaults)))))
 
   #@(staticmethod
       (defn -kwargsonly-from [argspec]
@@ -86,7 +87,7 @@
   #@(classmethod
       (defn -acc-lispy-repr [cls formatted-argspec [args opener]]
         (+ formatted-argspec
-           (if (and formatted-argspec args) " " (str))
+           (if (and formatted-argspec args) " " "")
            (cls.-format-args args opener))))
 
   (defn --str-- [self]
@@ -101,7 +102,7 @@
 ;; * Introspect
 ;; ** Internal
 
-(defclass Introspect [object]
+(defclass Inspect [object]
   (defn --init-- [self obj]
     (setv self.obj obj))
 
@@ -109,29 +110,34 @@
     (or (-> self.obj.--doc-- (.splitlines) first) ""))
 
   #@(property
-      (defn obj-name [self]
-        (if self.lambda?
-            "<lambda>"
-            (hy-symbol-unmangle func.--name--))))
-
-  #@(property
       (defn -args-docs-delim [self]
         (or "" (and self.obj.--doc-- " - "))))
 
-  (defn -cut-self-maybe [self docs]
+  (defn -cut-obj-name-maybe [self docs]
     (when (or self.class? self.method-wrapper?)
       (-> docs
          (.replace "self " "")
          (.replace "self" "")))
     docs)
 
-  (defn -cut-obj-name-maybe [self docs]
+  (defn -cut-method-wrapper-maybe [self docs]
     (when self.method-wrapper?
       (+ "method-wrapper"
          (cut docs (.index docs ":"))))
     docs)
 
+  (defn -format-docs [self docs]
+    (-> docs
+       self.-cut-obj-name-maybe
+       self.-cut-method-wrapper-maybe))
+
 ;; ** Properties
+
+  #@(property
+      (defn obj-name [self]
+        (if self.lambda?
+            "<lambda>"
+            (hy-symbol-unmangle func.--name--))))
 
   #@(property
       (defn lambda? [self]
@@ -153,21 +159,17 @@
     (try (Signature self.obj)
          (except [e TypeError] None)))
 
-;; ** Eldoc
+;; ** Actions
 
-  (defn raw-eldoc [self]
+  (defn docs [self]
     (setv signature
           (.signature self))
 
-    (if signature
-        (.format "{name}: ({args}){delim}{docs}"
-                 :name self.obj-name
-                 :args signature
-                 :delim self.-args-docs-delim
-                 :docs self.-docs-first-line)
-        (builtin-docs-to-lispy-docs self.-docs-first-line)))
-
-  (defn eldoc [self]
-    (-> (.raw-eldoc self)
-       self.-cut-self-maybe
-       self.-cut-obj-name-maybe)))
+    (self.-format-docs
+      (if signature
+          (.format "{name}: ({args}){delim}{docs}"
+                   :name self.obj-name
+                   :args signature
+                   :delim self.-args-docs-delim
+                   :docs self.-docs-first-line)
+          (builtin-docs-to-lispy-docs self.-docs-first-line)))))

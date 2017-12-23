@@ -1,8 +1,8 @@
 "Convert formatting of builtins docstrings first-line to lispy representation."
 
 (require [src.utils.macros [*]])
+(import [src.models [Parameter]])
 
-;; TODO Requires `Parameter`
 
 (defn -split-docs [docs]
   "Partition docs string into pre/-/post-args strings."
