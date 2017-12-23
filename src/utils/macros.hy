@@ -1,5 +1,8 @@
 (require [hy.extra.anaphoric [*]])
 
+;; TODO Implement zipwith
+;; TODO Add the #$ tagmacro
+
 (deftag t [form]
   "Cast evaluated form to a tuple. Useful via eg. #t(-> x f1 f2 ...)."
   `(tuple ~form))

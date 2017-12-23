@@ -292,8 +292,7 @@
         (.convert-builtin-docs-to-lispy-repr)))
 
   (defn eldoc [self]
-    (-> self
-       (.raw-eldoc)
+    (-> (.raw-eldoc self)
        self.-cut-self-maybe
        self.-cut-obj-name-maybe))
   )
