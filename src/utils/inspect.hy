@@ -25,26 +25,6 @@
 
 ;; Add annotate/inspect funcs by possibly collapsing their classes to modules
 
-(defclass Actions
-  (defn --init-- [self]
-    (setv self.completer (Completer)))
-
-  (defn complete [self prefix-str]
-    (-> prefix-str
-       Prefix
-       self.completer))
-
-  (defn annotate [self candidate-str]
-    (-> candidate-str
-       Candidate
-       annotate))
-
-  (defn docs [self candidate-str]
-    (-> candidate-str
-       Candidate
-       (.get-obj)
-       inspect)))
-
 ;; * Candidate
 
 (defclass Candidate [object]
@@ -122,6 +102,10 @@
             (map #%(if (instance? str %1) %1 %1.--name--))
             (map hy-symbol-unmangle)
             distinct)))
+
+  (defn reset [self]
+    "Reconstruct global candidates to detect changes in macros/locals."
+    (.--init-- self))
 
   (defn --call-- [self prefix]
     "Get candidates for a given Prefix."
