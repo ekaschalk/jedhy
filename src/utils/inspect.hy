@@ -1,3 +1,4 @@
+(require [src.utils.macros [*]])
 (import
   builtins inspect
 
@@ -5,7 +6,6 @@
   ;; [hy.core.shadow [*]] [hy.core.language [*]]
 
   [src.docstrings [builtin-docs-to-lispy-docs]])
-(require [src.utils.macros [*]])
 
 
 ;; * Candidate
@@ -40,7 +40,10 @@
 
   (defn get-obj [self]
     "Get object for underlying candidate."
-    (or (.macro? self) (.evaled? self))))
+    (or (.macro? self) (.evaled? self)))
+
+  (defn attributes [self]
+    #t(some-> self (.evaled?) dir (map hy-symbol-unmangle))))
 
 ;; * Prefix
 
@@ -60,14 +63,14 @@
         [(->> components butlast (.join ".") Candidate)
          (->> components last)]))
 
-;; * Candidates
+;; * Completer
 
-(defclass Candidates [object]
+(defclass Completer [object]
   (defn --init-- [self]
-    (setv self.candidates (.-collect-candidates self)))
+    (setv self.candidates (.-collect-globals self)))
 
   #@(staticmethod
-      (defn -collect-candidates []
+      (defn -collect-globals []
         #t(->> hy.macros.-hy-macros
             (.values)
             (map dict.keys)
@@ -77,15 +80,11 @@
             (map hy-symbol-unmangle)
             distinct)))
 
-  (defn -dir-of [self candidate]
-    #t(some-> candidate
-           (.evaled?)
-           dir
-           (map hy-symbol-unmangle)))
-
   (defn --call-- [self prefix]
-    #t(some->> self.candidates
-            (or (.dir-of self.prefix.candidate))
+    (setv candidates
+          (or (.attributes self.prefix.candidate) self.candidates))
+
+    #t(some->> candidates
             (filter #%(.startswith %1 prefix.attr-prefix))
             (map #$(+ candidate ".")))))
 
