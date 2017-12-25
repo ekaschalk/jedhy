@@ -17,7 +17,7 @@
         #t(->> hy.macros.-hy-macros
             (.values)
             (map dict.keys)
-            (chain (.keys locals) hy.compiler.-compile-table)
+            (chain (.keys (locals)) hy.compiler.-compile-table)
             flatten
             (map #%(if (instance? str %1) %1 %1.--name--))
             (map hy-symbol-unmangle)

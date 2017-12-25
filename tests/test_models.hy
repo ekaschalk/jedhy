@@ -3,9 +3,10 @@
 (require [tests.hytest [*]])
 (import [tests.hytest [*]])
 
-;; (import [src.models [Parameter]])
-(import [src.models [*]])
-;; (import [src.actions [Actions]])
+;; (import [src.inspection [Parameter]])
+;; (import [src.models [*]])
+(import [src.actions [Actions]])
+;; (import [src.completion [*]])
 ;; (import [src.utils.docstrings [*]])
 
 (defn test-x []

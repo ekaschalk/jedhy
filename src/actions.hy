@@ -5,10 +5,10 @@
 (import
   [src.annotations [annotate]]
   [src.completion [Completer]]
-  [src.inspect [Inspect]]
+  [src.inspection [Inspect]]
   [src.models [Candidate Prefix]])
 
-(defclass Actions
+(defclass Actions [object]
   (defn --init-- [self]
     "Instantiate a Completer with globals set."
     (setv self.completer (Completer)))
