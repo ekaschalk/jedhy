@@ -1,68 +1,78 @@
-;; (some-> 1 inc inc)
-;; (some-> None inc inc inc)
-;; (some-> 1 ((constantly None)) inc)
+(require [src.utils.macros [*]])
+(require [hy.extra.anaphoric [*]])
+(require [tests.hytest [*]])
+(import [tests.hytest [*]])
 
-;; (some->> 1 (/ 2))
-;; (some->> None inc inc)
-;; (some->> 1 ((constantly None)) inc)
 
-;; (defn assert= [x y]
-;;   (assert (= x y)))
+;; * Some threads
+;; ** Simple cases
 
-;; (defn fn-just-rest [&rest x]
-;;   (- #* x))
+(defn test-some-no-forms []
+  (assert= None (some-> None))
+  (assert= 1 (some-> 1))
+  (assert= 1 (some->> 1)))
 
-;; (defn fn-args-plus-rest [a &rest x]
-;;   (+ a (- #* x)))
+(defn test-some-some-forms []
+  (assert= 2 (some-> 1 inc))
+  (assert= 3 (some-> 1 inc inc))
+  (assert= 2 (some->> 1 inc))
+  (assert= 3 (some->> 1 inc inc)))
 
-;; (defn fn-args-plus-optional [a &optional b [c 10]]
-;;   (+ a (- b c)))
+(defn test-some-short-circuit []
+  (assert (none? (some-> None inc)))
+  (assert (none? (some-> 1 ((constantly None)) inc)))
+  (assert (none? (some->> None inc)))
+  (assert (none? (some->> 1 ((constantly None)) inc))))
 
-;; (defn fn-kwonly [a b &kwonly [c 10]]
-;;   (+ (- a b) c))
+(defn test-some-with-nonliteral-head []
+  (assert= (-> (+ 1 2) inc)
+           (some-> (+ 1 2) inc)))
 
-;; (assert= (-> 1 (fn-rest 2 3))
-;;          (some-> 1 (fn-rest 2 3)))
-;; (assert= (->> 1 (fn-rest 2 3))
-;;          (some->> 1 (fn-rest 2 3)))
+;; ** Specific signatures
 
-;; (assert= (-> 1 (fn-args-plus-rest 2 3))
-;;          (some-> 1 (fn-args-plus-rest 2 3)))
-;; (assert= (->> 1 (fn-args-plus-rest 2 3))
-;;          (some->> 1 (fn-args-plus-rest 2 3)))
+(defn test-some-func-just-has-rest []
+  (defn fn-just-rest [&rest x]
+    (- #* x))
 
-;; (assert= (-> 1 (fn-args-plus-optional 2))
-;;          (some-> 1 (fn-args-plus-optional 2)))
-;; (assert= (->> 1 (fn-args-plus-optional 2))
-;;          (some->> 1 (fn-args-plus-optional 2)))
+  (assert= (-> 1 (fn-just-rest 2 3))
+           (some-> 1 (fn-just-rest 2 3)))
+  (assert= (->> 1 (fn-just-rest 2 3))
+           (some->> 1 (fn-just-rest 2 3))))
 
-;; (assert= (-> 1 (fn-args-plus-optional 2 3))
-;;          (some-> 1 (fn-args-plus-optional 2 3)))
-;; (assert= (->> 1 (fn-args-plus-optional 2 3))
-;;          (some->> 1 (fn-args-plus-optional 2 3)))
 
-;; (assert= (-> 1 (fn-kwonly 2))
-;;          (some-> 1 (fn-kwonly 2)))
-;; (assert= (->> 1 (fn-kwonly 2))
-;;          (some->> 1 (fn-kwonly 2)))
+(defn test-some-func-arg-plus-rest []
+  (defn fn-args-plus-rest [a &rest x]
+    (+ a (- #* x)))
 
-;; (assert= (-> 1 (fn-kwonly 2 :c 5))
-;;          (some-> 1 (fn-kwonly 2 :c 5)))
-;; (assert= (->> 1 (fn-kwonly 2 :c 5))
-;;          (some->> 1 (fn-kwonly 2 :c 5)))
+  (assert= (-> 1 (fn-args-plus-rest 2 3))
+           (some-> 1 (fn-args-plus-rest 2 3)))
+  (assert= (->> 1 (fn-args-plus-rest 2 3))
+           (some->> 1 (fn-args-plus-rest 2 3))))
 
-;; (assert (none? (some-> None inc inc)))
-;; (assert (none? (some->> None inc inc)))
+(defn test-some-arg-plus-optional []
+  (defn fn-args-plus-optional [a &optional b [c 10]]
+    (+ a (- b c)))
 
-;; (assert (none? (some-> 1 ((constantly None)) inc)))
-;; (assert (none? (some->> 1 ((constantly None)) inc)))
+  (assert= (-> 1 (fn-args-plus-optional 2))
+           (some-> 1 (fn-args-plus-optional 2)))
+  (assert= (->> 1 (fn-args-plus-optional 2))
+           (some->> 1 (fn-args-plus-optional 2)))
 
-;; (assert= 1 (some-> 1 ((constantly 0)) inc))
-;; (assert= 1 (some->> 1 ((constantly 0)) inc))
+  (assert= (-> 1 (fn-args-plus-optional 2 3))
+           (some-> 1 (fn-args-plus-optional 2 3)))
+  (assert= (->> 1 (fn-args-plus-optional 2 3))
+           (some->> 1 (fn-args-plus-optional 2 3))))
 
-;; ;; Open with form that evaluates to something
-;; (assert= (-> (+ 1 2) inc)
-;;          (some-> (+ 1 2) inc))
+(defn test-some-with-kwonly []
+  (defn fn-kwonly [a b &kwonly [c 10]]
+    (+ (- a b) c))
 
-;; ;; Open with form that evaluates to None
-;; (assert (none? (some-> ((constantly None)) inc)))
+  (assert= (-> 1 (fn-kwonly 2))
+           (some-> 1 (fn-kwonly 2)))
+  (assert= (->> 1 (fn-kwonly 2))
+           (some->> 1 (fn-kwonly 2)))
+
+  (assert= (-> 1 (fn-kwonly 2 :c 5))
+           (some-> 1 (fn-kwonly 2 :c 5)))
+  (assert= (->> 1 (fn-kwonly 2 :c 5))
+           (some->> 1 (fn-kwonly 2 :c 5))))
