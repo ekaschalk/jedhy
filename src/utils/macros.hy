@@ -1,6 +1,6 @@
-(import functools)
-
 (require [hy.extra.anaphoric [*]])
+
+(import functools)
 
 ;; * Tag Macros
 
@@ -18,13 +18,16 @@
   `(fn [&rest x &kwargs y]
      (if (none? (first x))
          None
-         (~opener #* x #** y))))
+         ;; Fancy way of handling the dot-dsl
+         ;; Just (~opener #* x #** y) will cause a compiler error
+         ;; as we can't unpack the .method
+         (-> x first (~opener #* (rest x) #** y)))))
 
 (defmacro -opener-or-none-last [opener]
   `(fn [&rest x &kwargs y]
      (if (none? (last x))
          None
-         (~opener #* x #** y))))
+         (-> x first (~opener #* (rest x) #** y)))))
 
 (defmacro some-> [head &rest forms]
   (setv evaled `(~head))

@@ -6,12 +6,13 @@
   hy
   [hy.lex.parser [hy-symbol-unmangle]]
 
-  [src.docstrings [builtin-docs-to-lispy-docs]])
+  ;; [src.utils.docstrings [builtin-docs-to-lispy-docs]]
+  )
 
 ;; * Parameters
 
 (defclass Parameter [object]
-  (def --init-- [self symbol &optional default]
+  (defn --init-- [self symbol &optional default]
     (setv self.symbol symbol)
     (setv self.default default))
 
@@ -26,7 +27,8 @@
   (defn --init-- [self func]
     (try (setv argspec
                (inspect.getfullargspec func))
-         (except (raise TypeError "Unsupported callable for Signature.")))
+         (except [e TypeError]
+           (raise (TypeError "Unsupported callable for Signature."))))
 
     (setv [args defaults kwargs]
           ((juxt cls.-args-from cls.-defaults-from cls.-kwargs-from) argspec))

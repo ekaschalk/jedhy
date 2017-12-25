@@ -1,6 +1,7 @@
 "Convert formatting of builtins docstrings first-line to lispy representation."
 
 (require [src.utils.macros [*]])
+(require [hy.extra.anaphoric [*]])
 (import [src.models [Parameter]])
 
 

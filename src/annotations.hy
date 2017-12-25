@@ -1,4 +1,5 @@
 (require [src.utils.macros [*]])
+(require [hy.extra.anaphoric [*]])
 
 (defn -translate-class [klass]
   "Return annotation given a name of a class."

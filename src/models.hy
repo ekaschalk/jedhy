@@ -1,4 +1,5 @@
 (require [src.utils.macros [*]])
+(require [hy.extra.anaphoric [*]])
 (import
   builtins
 
@@ -43,7 +44,10 @@
 
   (defn attributes [self]
     "Return attributes for obj if they exist."
-    #t(some-> self (.evaled?) dir (map hy-symbol-unmangle))))
+    #t(some-> self
+            (.evaled?)
+            dir
+            (map hy-symbol-unmangle))))
 
 ;; * Prefix
 
@@ -63,4 +67,4 @@
               (.split prefix "."))
 
         [(->> components butlast (.join ".") Candidate)
-         (->> components last)]))
+         (->> components last)])))

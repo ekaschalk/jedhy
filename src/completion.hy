@@ -1,4 +1,5 @@
 (require [src.utils.macros [*]])
+(require [hy.extra.anaphoric [*]])
 (import
   hy hy.compiler hy.macros
   [hy.lex.parser [hy-symbol-unmangle]])

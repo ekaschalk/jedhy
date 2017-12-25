@@ -1,3 +1,5 @@
+"Tests for the some-> macros I've implemented, pending merging into Hy."
+
 (require [src.utils.macros [*]])
 (require [hy.extra.anaphoric [*]])
 (require [tests.hytest [*]])
@@ -27,6 +29,15 @@
 (defn test-some-with-nonliteral-head []
   (assert= (-> (+ 1 2) inc)
            (some-> (+ 1 2) inc)))
+
+(defn test-some-with-dot-dsl []
+  (setv x [])
+  (some-> x (.append 1))
+  (assert 1 (first x))
+
+  (setv x [])
+  (some->> 1 (.append x))
+  (assert 1 (first x)))
 
 ;; ** Specific signatures
 
