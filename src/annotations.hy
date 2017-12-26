@@ -29,4 +29,4 @@
               [(.macro? candidate)
                "macro"]))
 
-  (.format "<{} {}>" annotation candidate))
+  (.format "<{} {}>" annotation candidate.symbol))

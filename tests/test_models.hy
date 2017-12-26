@@ -8,10 +8,6 @@
 
   [src.models [Candidate Prefix]])
 
-;; (import [src.inspection [Parameter]])
-;; (import [src.actions [Actions]])
-;; (import [src.completion [*]])
-;; (import [src.utils.docstrings [*]])
 
 ;; * Prefixes
 
@@ -103,3 +99,12 @@
 (defn test-candidates-attributes-nested []
   (assert-all-in ["--str--" "--call--"]
                  (-> "print.--call--" Candidate (.attributes))))
+
+;; FAIL evaled isnt using current namespace
+(defn test-candidates-namespacing []
+  (import itertools)
+  (setv x (-> "itertools.tee" Candidate))
+  (setv x (-> "builtins.ArithmeticError" Candidate))
+
+  (assert-all-in ["from-iterable"]
+                 (-> "itertools.tee" Candidate (.attributes))))
