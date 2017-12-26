@@ -73,6 +73,9 @@
 
 ;; ** Python
 
+(defn test-candidate-evaled-fails []
+  (assert (none? (-> "doesn't exist" Candidate (.evaled?)))))
+
 (defn test-candidate-evaled-builtins []
   (assert (= print (-> "print" Candidate (.evaled?)))))
 
@@ -83,5 +86,20 @@
   (import builtins)
   (assert (= builtins (-> "builtins" Candidate (.evaled?)))))
 
-(defn test-candidate-evaled-fails []
-  (assert (none? (-> "doesn't exist" Candidate (.evaled?)))))
+;; ** Attributes
+
+(defn test-candidate-attributes-fails []
+  (assert (none? (-> "doesn't exist" Candidate (.attributes)))))
+
+(defn test-candidate-attributes-builtin []
+  (assert-all-in ["--str--" "--call--"]
+                 (-> "print" Candidate (.attributes))))
+
+(defn test-candidates-attributes-module []
+  (import builtins)
+  (assert-all-in ["eval" "AssertionError"]
+                 (-> "builtins" Candidate (.attributes))))
+
+(defn test-candidates-attributes-nested []
+  (assert-all-in ["--str--" "--call--"]
+                 (-> "print.--call--" Candidate (.attributes))))

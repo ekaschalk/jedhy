@@ -49,10 +49,11 @@
 
   (defn attributes [self]
     "Return attributes for obj if they exist."
-    #t(some-> self
-            (.evaled?)
-            dir
-            (map hy-symbol-unmangle))))
+    (some->> self
+           (.evaled?)
+           dir
+           (map hy-symbol-unmangle)
+           tuple)))
 
 ;; * Prefix
 
