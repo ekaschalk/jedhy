@@ -1,6 +1,7 @@
 "Expose jedhy `Actions` for IDE and metaprogramming use-cases."
 
 (require [src.utils.macros [*]])
+(import [src.utils.macros [*]])
 (require [hy.extra.anaphoric [*]])
 (import
   [src.annotations [annotate]]

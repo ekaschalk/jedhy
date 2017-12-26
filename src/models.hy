@@ -1,4 +1,5 @@
 (require [src.utils.macros [*]])
+(import [src.utils.macros [*]])
 (require [hy.extra.anaphoric [*]])
 (import
   builtins
@@ -33,7 +34,7 @@
 
   (defn shadow? [self]
     "Is candidate a shadowed operator and return it."
-    (try (get (dir hy.core.shadow) self.mangled)
+    (try (some #$(= self.mangled) (dir hy.core.shadow))
          (except [e KeyError] None)))
 
   (defn evaled? [self]

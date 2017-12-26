@@ -12,6 +12,16 @@
   "Partially apply a form eg. (#$(map inc) [1 2 3])."
   `(functools.partial ~@form))
 
+;; * FP Macros
+
+(defmacro fn-> [&rest code]
+  "Thread first an anonymous function."
+  `#%(-> %1 ~@code))
+
+(defmacro fn->> [&rest code]
+  "Thread last an anonymous function."
+  `#%(->> %1 ~@code))
+
 ;; * Some-> and Some->> threads
 
 (defmacro -opener-or-none-first [opener]

@@ -30,3 +30,27 @@
 
   (assert= prefix.candidate.symbol candidate)
   (assert= prefix.attr-prefix attr-prefix))
+
+;; * Candidates
+
+(defn test-candidate-compiler []
+  (setv compiler?
+        (fn-> Candidate (.compiler?)))
+
+  (assert (->> ["try" "for*" "+=" "require"]
+             (map compiler?)
+             all))
+  (assert (->> "doesn't exist"
+             compiler?
+             none?)))
+
+(defn test-candidate-shadow []
+  (setv shadow?
+        (fn-> Candidate (.shadow?)))
+
+  (assert (->> ["get" "is" "is_not"]
+             (map shadow?)
+             all))
+  (assert (->> "doesn't exist"
+             shadow?
+             none?)))
