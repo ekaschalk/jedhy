@@ -32,23 +32,6 @@
           --HYDOC
           ]])
 
-;; * Asserts
-
-(defn assert= [x y]
-  (assert (= x y)))
-
-(defn assert-in [x y]
-  (assert (in x y)))
-
-(defn assert-not-in [x y]
-  (assert (not (in x y))))
-
-(defn assert-all= [x y]
-  (assert (->> (zip-longest x y) (*map =) all)))
-
-(defn assert-all-in [x y]
-  (assert (->> x (map (fn [z] (in z y))) all)))
-
 ;; * Tests
 ;; ** Formatting
 

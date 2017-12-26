@@ -17,6 +17,9 @@
     (setv self.mangled
           (hy-symbol-mangle symbol)))
 
+  (defn --repr-- [self]
+    (.format "Candidate<(symbol={}>)" self.symbol))
+
   (defn compiler? [self]
     "Is candidate a compile table construct and return it."
     (try (get hy.compiler.-compile-table self.symbol)
