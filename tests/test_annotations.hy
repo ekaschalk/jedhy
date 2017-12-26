@@ -16,8 +16,9 @@
   (assert= "<def first>"
            (-> "first" Candidate annotate)))
 
-;; FAIL evaled? isn't using current namespace
-;; (defn test-annotate-class []
-;;   (import itertools)
-;;   (assert= "<class itertools.tee>"
-;;            (-> "itertools.tee" Candidate annotate)))
+(defn test-annotate-class []
+  (defclass AClass [])
+  (assert= "<class AClass>"
+           (-> "AClass"
+              (Candidate :local (locals))
+              annotate)))

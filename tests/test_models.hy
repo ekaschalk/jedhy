@@ -91,20 +91,39 @@
   (assert-all-in ["--str--" "--call--"]
                  (-> "print" Candidate (.attributes))))
 
-(defn test-candidates-attributes-module []
+(defn test-candidate-attributes-module []
   (import builtins)
   (assert-all-in ["eval" "AssertionError"]
                  (-> "builtins" Candidate (.attributes))))
 
-(defn test-candidates-attributes-nested []
+(defn test-candidate-attributes-nested []
   (assert-all-in ["--str--" "--call--"]
                  (-> "print.--call--" Candidate (.attributes))))
 
-;; FAIL evaled isnt using current namespace
-(defn test-candidates-namespacing []
-  (import itertools)
-  (setv x (-> "itertools.tee" Candidate))
-  (setv x (-> "builtins.ArithmeticError" Candidate))
+;; ** Namespacing
 
-  (assert-all-in ["from-iterable"]
-                 (-> "itertools.tee" Candidate (.attributes))))
+(defn test-candidate-namespace-globals []
+  (import itertools)
+  (assert (none?
+            (-> "itertools.chain"
+               Candidate
+               (.attributes))))
+  (assert-in "from-iterable"
+             (-> "itertools.chain"
+                (Candidate :namespace (globals))
+                (.attributes))))
+
+(defn test-candidate-namespace-locals []
+  (defclass AClass [])
+  (assert (none?
+            (-> "AClass"
+               Candidate
+               (.attributes))))
+  (assert (none?
+            (-> "AClass"
+               (Candidate :namespace (globals))
+                (.attributes))))
+  (assert-in "--doc--"
+             (-> "AClass"
+                (Candidate :local (locals))
+                (.attributes))))

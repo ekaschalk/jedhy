@@ -12,11 +12,13 @@
 ;; * Candidate
 
 (defclass Candidate [object]
-  (defn --init-- [self symbol]
+  (defn --init-- [self symbol &optional namespace local]
     (setv self.symbol
           (hy-symbol-unmangle symbol))
     (setv self.mangled
-          (hy-symbol-mangle symbol)))
+          (hy-symbol-mangle symbol))
+    (setv self.namespace (or namespace (globals)))
+    (setv self.local (or local (locals))))
 
   (defn --repr-- [self]
     (.format "Candidate<(symbol={}>)" self.symbol))
@@ -40,7 +42,7 @@
 
   (defn evaled? [self]
     "Is candidate evaluatable and return it."
-    (try (builtins.eval self.mangled (globals))
+    (try (builtins.eval self.mangled self.namespace self.local)
          (except [e Exception] None)))
 
   (defn get-obj [self]
