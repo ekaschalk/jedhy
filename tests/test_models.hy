@@ -126,4 +126,10 @@
   (assert-in "--doc--"
              (-> "AClass"
                 (Candidate :local (locals))
-                (.attributes))))
+                (.attributes)))
+
+  (setv doesnt-exist 1)
+  (assert (-> "doesnt-exist"
+             (Candidate :local (locals))
+             (.evaled?)))
+  )

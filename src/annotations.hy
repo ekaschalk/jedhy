@@ -18,14 +18,14 @@
   (setv obj
         (.evaled? candidate))
 
-  ;; Ordered by lookup speed and rough expected frequency
   (setv annotation
-        (cond [obj
+        (cond [(not (none? obj))  ; Obj could be instance of bool
                (-translate-class obj.--class--.--name--)]
-              [(.compiler? candidate)
-               "compiler"]
+              ;; Shadow takes priority over compiler annotations
               [(.shadow? candidate)
                "shadowed"]
+              [(.compiler? candidate)
+               "compiler"]
               [(.macro? candidate)
                "macro"]))
 

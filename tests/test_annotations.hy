@@ -10,6 +10,8 @@
   [src.models [Candidate]])
 
 
+;; * Tests
+
 (defn test-annotate-builtin-or-function []
   (assert= "<def print>"
            (-> "print" Candidate annotate))
@@ -22,3 +24,39 @@
            (-> "AClass"
               (Candidate :local (locals))
               annotate)))
+
+(defn test-annotate-module-and-aliases []
+  (import itertools)
+  (assert= "<module itertools>"
+           (-> "itertools"
+              (Candidate :local (locals))
+              annotate))
+
+  (import [itertools :as it])
+  (assert= "<module it>"
+           (-> "it"
+               (Candidate :local (locals))
+               annotate)))
+
+(defn test-annotate-vars []
+  (setv doesnt-exist False)
+  (assert= "<instance doesnt-exist>"
+           (-> "doesnt-exist"
+              (Candidate :local (locals))
+              annotate)))
+
+(defn test-annotate-compiler []
+  (assert= "<compiler try>"
+           (-> "try" Candidate annotate)))
+
+(defn test-annotate-shadow []
+  (assert= "<shadowed is>"
+           (-> "is" Candidate annotate))
+  (assert= "<shadowed get>"
+           (-> "get" Candidate annotate)))
+
+(defn test-annotate-macro []
+  (assert= "<macro ->>"
+           (-> "->" Candidate annotate))
+  (assert= "<macro as->>"
+           (-> "as->" Candidate annotate)))
