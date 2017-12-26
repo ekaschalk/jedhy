@@ -32,6 +32,7 @@
   (assert= prefix.attr-prefix attr-prefix))
 
 ;; * Candidates
+;; ** Compiler
 
 (defn test-candidate-compiler []
   (setv compiler?
@@ -44,6 +45,21 @@
              compiler?
              none?)))
 
+;; ** Macros
+
+(defn test-candidate-macro []
+  (setv macro?
+        (fn-> Candidate (.macro?)))
+
+  (assert (->> ["->" "with" "when"]
+             (map macro?)
+             all))
+  (assert (->> "doesn't exist"
+             macro?
+             none?)))
+
+;; ** Shadows
+
 (defn test-candidate-shadow []
   (setv shadow?
         (fn-> Candidate (.shadow?)))
@@ -54,3 +70,18 @@
   (assert (->> "doesn't exist"
              shadow?
              none?)))
+
+;; ** Python
+
+(defn test-candidate-evaled-builtins []
+  (assert (= print (-> "print" Candidate (.evaled?)))))
+
+(defn test-candidate-evaled-methods []
+  (assert (= print.--call-- (-> "print.--call--" Candidate (.evaled?)))))
+
+(defn test-candidate-evaled-modules []
+  (import builtins)
+  (assert (= builtins (-> "builtins" Candidate (.evaled?)))))
+
+(defn test-candidate-evaled-fails []
+  (assert (none? (-> "doesn't exist" Candidate (.evaled?)))))

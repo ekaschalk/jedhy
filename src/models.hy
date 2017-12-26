@@ -28,6 +28,7 @@
 
   (defn macro? [self]
     "Is candidate a macro and return it."
+    ;; TODO Enable for namespaces other than None (hy core)
     (hy.eval '(import hy.macros))  ; See https://github.com/hylang/hy/issues/1467
     (try (get hy.macros.-hy-macros None self.mangled)
          (except [e KeyError] None)))
@@ -40,7 +41,7 @@
   (defn evaled? [self]
     "Is candidate evaluatable and return it."
     (try (builtins.eval self.mangled (globals))
-         (except [e NameError] None)))
+         (except [e Exception] None)))
 
   (defn get-obj [self]
     "Get object for underlying candidate."
