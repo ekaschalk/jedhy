@@ -41,36 +41,36 @@
   #@(staticmethod
       (defn -args-from [argspec]
         #t(some->>
-           (-> argspec.defaults len (drop-last argspec.args) list)
-           (or argspec.args argspec.defaults)
-           (map Parameter))))
+            (-> argspec.defaults len (drop-last argspec.args) list)
+            (or argspec.args argspec.defaults)
+            (map Parameter))))
 
   #@(classmethod
       (defn -defaults-from [cls argspec]
         #t(some->>
-           (-> argspec cls.-args-from len (drop argspec.args) list)
-           (or argspec.args argspec.defaults)
-           (#%(map Parameter %1 argspec.defaults)))))
+            (-> argspec cls.-args-from len (drop argspec.args) list)
+            (or argspec.args argspec.defaults)
+            (#%(map Parameter %1 argspec.defaults)))))
 
   #@(staticmethod
       (defn -kwargsonly-from [argspec]
         #t(some->>
-           (remove #%(in %1 (.keys argspec.kwonlydefaults)) argspec.kwonlyargs)
-           (or argspec.kwonlyargs argspec.kwonlydefaults)
-           (map Parameter))))
+            (remove #%(in %1 (.keys argspec.kwonlydefaults)) argspec.kwonlyargs)
+            (or argspec.kwonlyargs argspec.kwonlydefaults)
+            (map Parameter))))
 
   #@(staticmethod
       (defn -kwonlydefaults-from [argspec]
         #t(some->>
-           argspec.kwonlydefaults
-           (.items)
-           (*map Parameter))))
+            argspec.kwonlydefaults
+            (.items)
+            (*map Parameter))))
 
   #@(classmethod
       (defn -kwargs-from [cls argspec]
         (-> argspec
-           ((juxt cls.-kwargsonly-from cls.-kwonlydefaults-from) argspec)
-           flatten)))
+          ((juxt cls.-kwargsonly-from cls.-kwonlydefaults-from) argspec)
+          flatten)))
 
   #@(staticmethod
       (defn -format-args [args opener]
@@ -81,8 +81,8 @@
               (if opener (+ opener " ") ""))
 
         (->> args
-           (.join " ")
-           (+ opener))))
+          (.join " ")
+          (+ opener))))
 
   #@(classmethod
       (defn -acc-lispy-repr [cls formatted-argspec [args opener]]
@@ -160,12 +160,12 @@
 
   (setv formatted-args
         (->> (.split args ",")
-           (map str.strip)
-           list
-           -insert-optional
-           (map -argstring-to-param)
-           (map str)
-           (#$(str.join " "))))
+          (map str.strip)
+          list
+          -insert-optional
+          (map -argstring-to-param)
+          (map str)
+          (#$(str.join " "))))
 
   (+ pre-args args post-args))
 
@@ -186,8 +186,8 @@
   (defn -cut-obj-name-maybe [self docs]
     (if (or self.class? self.method-wrapper?)
         (-> docs
-           (.replace "self " "")
-           (.replace "self" ""))
+          (.replace "self " "")
+          (.replace "self" ""))
         docs))
 
   (defn -cut-method-wrapper-maybe [self docs]
@@ -198,8 +198,8 @@
 
   (defn -format-docs [self docs]
     (-> docs
-       self.-cut-obj-name-maybe
-       self.-cut-method-wrapper-maybe))
+      self.-cut-obj-name-maybe
+      self.-cut-method-wrapper-maybe))
 
 ;; ** Properties
 

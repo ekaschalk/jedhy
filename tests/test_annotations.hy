@@ -22,28 +22,28 @@
   (defclass AClass [])
   (assert= "<class AClass>"
            (-> "AClass"
-              (Candidate :local (locals))
-              annotate)))
+             (Candidate :local (locals))
+             annotate)))
 
 (defn test-annotate-module-and-aliases []
   (import itertools)
   (assert= "<module itertools>"
            (-> "itertools"
-              (Candidate :local (locals))
-              annotate))
+             (Candidate :local (locals))
+             annotate))
 
   (import [itertools :as it])
   (assert= "<module it>"
            (-> "it"
-               (Candidate :local (locals))
-               annotate)))
+             (Candidate :local (locals))
+             annotate)))
 
 (defn test-annotate-vars []
   (setv doesnt-exist False)
   (assert= "<instance doesnt-exist>"
            (-> "doesnt-exist"
-              (Candidate :local (locals))
-              annotate)))
+             (Candidate :local (locals))
+             annotate)))
 
 (defn test-annotate-compiler []
   (assert= "<compiler try>"

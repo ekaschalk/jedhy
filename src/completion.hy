@@ -14,14 +14,15 @@
   #@(staticmethod
       (defn -collect-globals []
         "Collect globals from (locals), macros, and the compile-table."
-        #t(->> hy.macros.-hy-macros
-            (.values)
-            (map dict.keys)
-            (chain (.keys (locals)) hy.compiler.-compile-table)
-            flatten
-            (map #%(if (instance? str %1) %1 %1.--name--))
-            (map hy-symbol-unmangle)
-            distinct)))
+        (->> hy.macros.-hy-macros
+          (.values)
+          (map dict.keys)
+          (chain (.keys (globals)) (.keys (locals)) hy.compiler.-compile-table)
+          flatten
+          (map #%(if (instance? str %1) %1 %1.--name--))
+          (map hy-symbol-unmangle)
+          distinct
+          tuple)))
 
   (defn reset [self]
     "Reconstruct global candidates to detect changes in macros/locals."
@@ -32,6 +33,7 @@
     (setv candidates
           (or (.attributes self.prefix.candidate) self.candidates))
 
-    #t(some->> candidates
-            (filter #%(.startswith %1 prefix.attr-prefix))
-            (map #$(+ candidate ".")))))
+    (some->> candidates
+      (filter #%(.startswith %1 prefix.attr-prefix))
+      (map #$(+ candidate "."))
+      tuple)))

@@ -35,11 +35,11 @@
         (fn-> Candidate (.compiler?)))
 
   (assert (->> ["try" "for*" "+=" "require"]
-             (map compiler?)
-             all))
+            (map compiler?)
+            all))
   (assert (->> "doesn't exist"
-             compiler?
-             none?)))
+            compiler?
+            none?)))
 
 ;; ** Macros
 
@@ -48,11 +48,11 @@
         (fn-> Candidate (.macro?)))
 
   (assert (->> ["->" "with" "when"]
-             (map macro?)
-             all))
+            (map macro?)
+            all))
   (assert (->> "doesn't exist"
-             macro?
-             none?)))
+            macro?
+            none?)))
 
 ;; ** Shadows
 
@@ -61,11 +61,11 @@
         (fn-> Candidate (.shadow?)))
 
   (assert (->> ["get" "is" "is_not"]
-             (map shadow?)
-             all))
+            (map shadow?)
+            all))
   (assert (->> "doesn't exist"
-             shadow?
-             none?)))
+            shadow?
+            none?)))
 
 ;; ** Python
 
@@ -106,30 +106,29 @@
   (import itertools)
   (assert (none?
             (-> "itertools.chain"
-               Candidate
-               (.attributes))))
+              Candidate
+              (.attributes))))
   (assert-in "from-iterable"
              (-> "itertools.chain"
-                (Candidate :namespace (globals))
-                (.attributes))))
+               (Candidate :namespace (globals))
+               (.attributes))))
 
 (defn test-candidate-namespace-locals []
   (defclass AClass [])
   (assert (none?
             (-> "AClass"
-               Candidate
-               (.attributes))))
+              Candidate
+              (.attributes))))
   (assert (none?
             (-> "AClass"
-               (Candidate :namespace (globals))
-                (.attributes))))
+              (Candidate :namespace (globals))
+              (.attributes))))
   (assert-in "--doc--"
              (-> "AClass"
-                (Candidate :local (locals))
-                (.attributes)))
+               (Candidate :local (locals))
+               (.attributes)))
 
   (setv doesnt-exist 1)
   (assert (-> "doesnt-exist"
-             (Candidate :local (locals))
-             (.evaled?)))
-  )
+            (Candidate :local (locals))
+            (.evaled?))))

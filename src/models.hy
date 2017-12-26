@@ -6,6 +6,8 @@
 
   hy hy.compiler hy.macros
   [hy.lex.parser [hy-symbol-mangle hy-symbol-unmangle]]
+
+  ;; TODO Do I need this import for the defualt namespace?
   ;; [hy.core.shadow [*]] [hy.core.language [*]]
   )
 
@@ -30,7 +32,6 @@
 
   (defn macro? [self]
     "Is candidate a macro and return it."
-    ;; TODO Enable for namespaces other than None (hy core)
     (hy.eval '(import hy.macros))  ; See https://github.com/hylang/hy/issues/1467
     (try (get hy.macros.-hy-macros None self.mangled)
          (except [e KeyError] None)))
@@ -52,10 +53,10 @@
   (defn attributes [self]
     "Return attributes for obj if they exist."
     (some->> self
-           (.evaled?)
-           dir
-           (map hy-symbol-unmangle)
-           tuple)))
+      (.evaled?)
+      dir
+      (map hy-symbol-unmangle)
+      tuple)))
 
 ;; * Prefix
 

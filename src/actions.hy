@@ -21,19 +21,19 @@
   (defn complete [self prefix-str]
     "Completions for a prefix string."
     (-> prefix-str
-       Prefix
-       self.completer))
+      Prefix
+      self.completer))
 
   (defn annotate [self candidate-str]
     "Annotate a candidate string."
     (-> candidate-str
-       Candidate
-       annotate))
+      Candidate
+      annotate))
 
   (defn docs [self candidate-str]
     "Docstring for a candidate string."
     (-> candidate-str
-       Candidate
-       (.get-obj)
-       Inspect
-       (.docs))))
+      Candidate
+      (.get-obj)
+      Inspect
+      (.docs))))
