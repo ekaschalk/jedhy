@@ -39,6 +39,10 @@
   (some->> 1 (.append x))
   (assert 1 (first x)))
 
+;; FAIL
+;; (defn test-some-with-dot-dsl-many-attrs []
+;;   (assert (some-> [] (. append --call--))))
+
 ;; ** Specific signatures
 
 (defn test-some-func-just-has-rest []
