@@ -15,7 +15,7 @@
     (setv self.default default))
 
   (defn --str-- [self]
-    (if self.default
+    (if (none? self.default)
         self.symbol
         (.format "[{} {}]" self.symbol self.default))))
 
@@ -26,10 +26,11 @@
     (try (setv argspec
                (inspect.getfullargspec func))
          (except [e TypeError]
-           (raise (TypeError "Unsupported callable for Signature."))))
+           (raise (TypeError "Unsupported callable for hy Signature."))))
 
     (setv [args defaults kwargs]
-          ((juxt cls.-args-from cls.-defaults-from cls.-kwargs-from) argspec))
+          ((juxt self.-args-from self.-defaults-from self.-kwargs-from)
+            argspec))
 
     (setv self.func func)
     (setv self.args args)
@@ -40,37 +41,48 @@
 
   #@(staticmethod
       (defn -args-from [argspec]
-        #t(some->>
-            (-> argspec.defaults len (drop-last argspec.args) list)
-            (or argspec.args argspec.defaults)
-            (map Parameter))))
+        (setv args
+              (-> argspec.defaults (or []) len (drop-last argspec.args) list))
+
+        (some->> args
+          ;; (or argspec.args argspec.defaults)
+          (map Parameter)
+          tuple)))
 
   #@(classmethod
       (defn -defaults-from [cls argspec]
-        #t(some->>
-            (-> argspec cls.-args-from len (drop argspec.args) list)
-            (or argspec.args argspec.defaults)
-            (#%(map Parameter %1 argspec.defaults)))))
+        (setv default-args
+              (-> argspec cls.-args-from len (drop argspec.args) list))
+
+        (some->> (or default-args None)
+          ;; (or argspec.args argspec.defaults)
+          (#%(map Parameter %1 argspec.defaults))
+          tuple)))
 
   #@(staticmethod
       (defn -kwargsonly-from [argspec]
-        #t(some->>
-            (remove #%(in %1 (.keys argspec.kwonlydefaults)) argspec.kwonlyargs)
-            (or argspec.kwonlyargs argspec.kwonlydefaults)
-            (map Parameter))))
+        (some->>
+          argspec.kwonlyargs
+          (remove #%(in %1 (.keys argspec.kwonlydefaults)))
+          ;; (or argspec.kwonlyargs argspec.kwonlydefaults)
+          (map Parameter)
+          tuple)))
 
   #@(staticmethod
       (defn -kwonlydefaults-from [argspec]
-        #t(some->>
-            argspec.kwonlydefaults
-            (.items)
-            (*map Parameter))))
+        (some->>
+          argspec.kwonlydefaults
+          (.items)
+          (*map Parameter)
+          tuple)))
 
   #@(classmethod
       (defn -kwargs-from [cls argspec]
         (-> argspec
-          ((juxt cls.-kwargsonly-from cls.-kwonlydefaults-from) argspec)
-          flatten)))
+          ((juxt cls.-kwargsonly-from cls.-kwonlydefaults-from))
+          flatten
+          (#%(remove none? %1))
+          tuple)))
 
   #@(staticmethod
       (defn -format-args [args opener]
@@ -81,6 +93,7 @@
               (if opener (+ opener " ") ""))
 
         (->> args
+          (map str)
           (.join " ")
           (+ opener))))
 

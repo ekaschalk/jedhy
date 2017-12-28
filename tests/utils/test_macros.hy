@@ -43,6 +43,15 @@
 ;; (defn test-some-with-dot-dsl-many-attrs []
 ;;   (assert (some-> [] (. append --call--))))
 
+;; FAIL
+;; Its imputing an extra arg into drop-last
+;; (some->>
+;;   (-> argspec.defaults
+;;     (or [])
+;;     len
+;;     (drop-last argspec.args)
+;;     list)
+
 ;; ** Specific signatures
 
 (defn test-some-func-just-has-rest []

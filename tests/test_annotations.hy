@@ -4,8 +4,6 @@
 (import [tests.hytest [*]])
 
 (import
-  pytest
-
   [src.annotations [annotate]]
   [src.models [Candidate]])
 
