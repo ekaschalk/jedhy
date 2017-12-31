@@ -99,6 +99,7 @@
            (-> func Signature str)))
 
 ;; * Builtin Docs to Lispy Formatting
+;; ** Standard Cases
 
 (defn test-builtin-docstring-conversion-maximal-case []
   (assert=
@@ -134,6 +135,7 @@
     (builtin-docs-to-lispy-docs
       "combinations(iterable, r) --> combinations object")))
 
+;; ** Failing Cases
 
 (defn test-builtin-docstring-conversion-fails-nonstandard-args-opener []
   (assert=
@@ -149,19 +151,40 @@
       "foo(not ok ...) - got it?")))
 
 ;; * Inspection
+;; ** Formatting
 
-(defn test-inspect-properties []
-  ;; Object name mangled
+(defn test-inspect-cut-self-maybe []
+  (defn a-func-so-dont-trim [x])
+  (assert= "foo: (self x)"
+           (-> a-func-so-dont-trim Inspect (.-cut-obj-name-maybe "foo: (self x)")))
+
+  (defclass Foo [])
+  (assert= "foo: (x)"
+           (-> Foo Inspect (.-cut-obj-name-maybe "foo: (self x)")))
+  (assert= "foo: ()"
+           (-> Foo Inspect (.-cut-obj-name-maybe "foo: (self)"))))
+
+
+(defn test-inspect-cut-method-wrapper []
+  (defclass Foo [])
+  (assert= "method-wrapper: ..."
+           (-> Foo.--call-- Inspect (.-cut-method-wrapper-maybe "foo: ..."))))
+
+;; ** Properties
+
+(defn test-inspect-obj-name-mangled []
   (defn func_foo [])
   (assert= "func-foo"
-           (-> func_foo Inspect (. obj-name)))
+           (-> func_foo Inspect (. obj-name))))
 
-  ;; Classes
+
+(defn test-inspect-class-and-method-wrappers []
   (defclass Foo [])
   (assert= "Foo"
            (-> Foo Inspect (. obj-name)))
   (assert (-> Foo Inspect (. class?)))
-  (assert (-> Foo.--call-- Inspect (. method-wrapper?)))
+  (assert (-> Foo.--call-- Inspect (. method-wrapper?))))
 
-  ;; Lambdas
+
+(defn test-inspect-lambdas []
   (assert (-> (fn []) Inspect (. lambda?))))
