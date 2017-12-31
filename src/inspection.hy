@@ -150,35 +150,41 @@
 
 (defn builtin-docs-to-lispy-docs [docs]
   "Convert built-in-styled docs string into a lispy-format."
+  ;; Check if docs is non-standard
+  (unless (and (in "(" docs) (in ")" docs))
+    (return docs))
+
   (setv [pre-args - post-args]
         (.partition docs "("))
 
-  (setv docs
-        (.format "{}: ({}" pre-args post-args))
-  (setv docs
-        (reduce (fn [s [old new]] (.replace s old new))
-                (->
-                  [["..." "#* args"]
-                   ["*args" "#* args"]
-                   ["**kwargs" "#** kwargs"]
-                   ["\n" "newline"]
-                   ["-->" "return"]]
-                  zip chain.from-iterable)
-                docs))
-
+  ;; Format before args and perform unconditional conversions
   (setv [pre-args args post-args]
-        (-split-docs docs))
+        (->> post-args
+          (.format "{}: ({}" pre-args)
+          (reduce (fn [s [old new]] (.replace s old new))
+                  (->
+                    [["..." "#* args"]
+                     ["*args" "#* args"]
+                     ["**kwargs" "#** kwargs"]
+                     ["\n" "newline"]
+                     ["-->" "return"]]
+                    zip chain.from-iterable))
+          -split-docs))
 
-  (setv formatted-args
-        (->> (.split args ",")
-          (map str.strip)
-          list
-          -insert-optional
-          (map -argstring-to-param)
-          (map str)
-          (#$(str.join " "))))
+  ;; Arguments in the docs must be comma-delimited
+  (unless (in "," args)
+    (return docs))
 
-  (+ pre-args formatted-args post-args))
+  ;; Format and reorder args and reconstruct the string
+  (+ pre-args
+     (as-> args args
+          (.split args ",")
+          (map str.strip args)
+          (list args)
+          (-insert-optional args)
+          (map (comp str -argstring-to-param) args)
+          (.join " " args))
+     post-args))
 
 ;; * Inspect
 ;; ** Internal
