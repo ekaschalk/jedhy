@@ -45,7 +45,6 @@
               (-> argspec.defaults (or []) len (drop-last argspec.args) list))
 
         (some->> args
-          ;; (or argspec.args argspec.defaults)
           (map Parameter)
           tuple)))
 
@@ -55,7 +54,6 @@
               (-> argspec cls.-args-from len (drop argspec.args) list))
 
         (some->> (or default-args None)
-          ;; (or argspec.args argspec.defaults)
           (#%(map Parameter %1 argspec.defaults))
           tuple)))
 
@@ -63,8 +61,7 @@
       (defn -kwargsonly-from [argspec]
         (some->>
           argspec.kwonlyargs
-          (remove #%(in %1 (.keys argspec.kwonlydefaults)))
-          ;; (or argspec.kwonlyargs argspec.kwonlydefaults)
+          (remove #%(in %1 (.keys (or argspec.kwonlydefaults {}))))
           (map Parameter)
           tuple)))
 
@@ -78,10 +75,10 @@
 
   #@(classmethod
       (defn -kwargs-from [cls argspec]
-        (-> argspec
+        (->> argspec
           ((juxt cls.-kwargsonly-from cls.-kwonlydefaults-from))
           flatten
-          (#%(remove none? %1))
+          (remove none?)
           tuple)))
 
   #@(staticmethod
