@@ -136,9 +136,10 @@
 (defn -optional-arg-idx [args]
   "First idx of an arg with a default in list of args strings."
   (defn -at-arg-with-default? [[idx arg]]
-    (and (in "=" arg) idx))
+    (when (in "=" arg) idx))
 
-  (some -at-arg-with-default? (enumerate args)))
+  ;; Can't use `some` since idx could be zero
+  (->> args enumerate (map -at-arg-with-default?) (remove none?) first))
 
 (defn -insert-optional [args]
   "Insert &optional into list of args strings."
@@ -167,13 +168,9 @@
                      ["*args" "#* args"]
                      ["**kwargs" "#** kwargs"]
                      ["\n" "newline"]
-                     ["-->" "return"]]
+                     ["-->" "- return"]]
                     zip chain.from-iterable))
           -split-docs))
-
-  ;; Arguments in the docs must be comma-delimited
-  (unless (in "," args)
-    (return docs))
 
   ;; Format and reorder args and reconstruct the string
   (+ pre-args
@@ -193,8 +190,9 @@
   (defn --init-- [self obj]
     (setv self.obj obj))
 
-  (defn -docs-first-line [self]
-    (or (-> self.obj.--doc-- (.splitlines) first) ""))
+  #@(property
+      (defn -docs-first-line [self]
+        (or (and self.obj.--doc-- (-> self.obj.--doc-- (.splitlines) first)) "")))
 
   #@(property
       (defn -args-docs-delim [self]
@@ -239,12 +237,12 @@
         "Is object of type 'method-wrapper'?"
         (instance? (type print.--str--) self.obj)))
 
+;; ** Actions
+
   (defn signature [self]
     "Return object's signature if it exists."
     (try (Signature self.obj)
          (except [e TypeError] None)))
-
-;; ** Actions
 
   (defn docs [self]
     (setv signature

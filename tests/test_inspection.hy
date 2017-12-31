@@ -110,7 +110,7 @@
 
 (defn test-builtin-docstring-conversion-optional-only-with-defaults []
   (assert=
-    "tee: (iterable &optional [n 2]) return tuple of n independent iterators."
+    "tee: (iterable &optional [n 2]) - return tuple of n independent iterators."
     (builtin-docs-to-lispy-docs
       "tee(iterable, n=2) --> tuple of n independent iterators.")))
 
@@ -131,24 +131,23 @@
 
 (defn test-builtin-docstring-conversion-no-optionals []
   (assert=
-    "combinations: (iterable r) return combinations object"
+    "combinations: (iterable r) - return combinations object"
     (builtin-docs-to-lispy-docs
       "combinations(iterable, r) --> combinations object")))
 
-;; ** Failing Cases
+
+(defn test-builtin-docstring-conversion-single-optional []
+  (assert=
+    "int: (&optional [x 0]) -> integer"
+    (builtin-docs-to-lispy-docs
+      "int(x=0) -> integer")))
+
 
 (defn test-builtin-docstring-conversion-fails-nonstandard-args-opener []
   (assert=
     "foo[ok] bar"
     (builtin-docs-to-lispy-docs
       "foo[ok] bar")))
-
-
-(defn test-builtin-docstring-conversion-fails-nonstandard-args-delim []
-  (assert=
-    "foo(not ok ...) - got it?"
-    (builtin-docs-to-lispy-docs
-      "foo(not ok ...) - got it?")))
 
 ;; * Inspection
 ;; ** Formatting
@@ -188,3 +187,34 @@
 
 (defn test-inspect-lambdas []
   (assert (-> (fn []) Inspect (. lambda?))))
+
+;; ** Actions
+
+(defn test-inspect-docs-of-class []
+  (defclass Foo [object] "A class\nDetails..." (defn --init-- [self x y]))
+  (assert= "Foo: (x y) - A class"
+           (-> Foo Inspect (.docs))))
+
+
+(defn test-inspect-docs-of-builtin []
+  (assert=
+    "print: (value #* args &optional [sep ' '] [end '\\n'] [file sys.stdout] [flush False])"
+    (-> print Inspect (.docs))))
+
+
+(defn test-inspect-docs-of-module []
+  (assert=
+    "Functional tools for creating and using iterators."
+    (-> itertools Inspect (.docs))))
+
+
+(defn test-inspect-docs-of-module-function []
+  (assert=
+    "tee: (iterable &optional [n 2]) - return tuple of n independent iterators."
+    (-> itertools.tee Inspect (.docs))))
+
+
+(defn test-inspect-docs-instance []
+  (setv x 1)
+  (assert= "int: (&optional [x 0]) -> integer"
+           (-> x Inspect (.docs))))
