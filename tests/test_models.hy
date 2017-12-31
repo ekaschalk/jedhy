@@ -7,6 +7,49 @@
   [src.models [Candidate Namespace Prefix]])
 
 
+;; * Namespace
+;; ** Components
+
+(defn test-namespace-core-macros []
+  (assert-all-in ["->" "with" "when"]
+                 (. (Namespace) macros)))
+
+
+(defn test-namespace-user-macros []
+  ;; Due to how Hy compiles macros, we can't assert-not-in before the defmacro
+  (defmacro foo-macro [x])
+  (assert-in "foo-macro"
+             (. (Namespace) macros)))
+
+
+(defn test-namespace-imported-macros []
+  (assert-in "ap-map"
+             (. (Namespace) macros)))
+
+
+(defn test-namespace-compiler []
+  (assert-all-in ["try" "for*" "+=" "require"]
+                 (. (Namespace) compile-table)))
+
+
+(defn test-namespace-shadows []
+  (assert-all-in ["get" "is" "not?"]
+                 (. (Namespace) shadows)))
+
+;; ** Names
+
+(defn test-namespace-all-names []
+  (assert-all-in ["HySet" "not?" "for" "->" "ap-map" "first"]
+                 (. (Namespace) names)))
+
+
+(defn test-namespace-names-with-locals []
+  (setv x False)
+  (defn foo [])
+  (assert-all-in ["foo" "x"]
+                 (. (Namespace :locals- (locals)) names)))
+
+
 ;; * Prefixes
 ;; ** Building
 
@@ -26,48 +69,6 @@
   (assert= prefix.candidate.symbol candidate)
   (assert= prefix.attr-prefix attr-prefix))
 
-;; ** Completion
-
-;; ;; TODO Right now Candidate, Completer, and Prefix all need namespace/local
-;; ;; Either turn into a global datastructure or refactor
-
-;; (defn test-stuff []
-;;   (setv complete
-;;         (Completer))
-
-;;   ;; print isn't in there
-;;   ;; modules aren't in there
-;;   ;; imported macros (fn->) *are* in there
-;;   ;; (print complete.candidates)
-
-;;   ;; (print (complete (Prefix "print._")))
-;;   )
-
-;; ;; (defn test-candidates-globals []
-;; ;;   (assert-all-in ["first" "in" "+" "even?"]
-;; ;;                  (--HYCOMPANY-get-globals)))
-
-;; ;; (defn test-candidates-trimmed []
-;; ;;   (setv candidates
-;; ;;         (--HYCOMPANY-get-globals))
-
-;; ;;   (assert-all-in ["first" "even?"] candidates)
-
-;; ;;   (setv trimmed-candidates
-;; ;;         (--HYCOMPANY-trim-candidates candidates "fi"))
-
-;; ;;   (assert-in "first" trimmed-candidates)
-;; ;;   (assert-not-in "even?" trimmed-candidates))
-
-;; ;; (defn test-candidates-formatted []
-;; ;;   (assert-in "builtins"
-;; ;;              (--HYCOMPANY "built"))
-;; ;;   (assert-in "builtins.eval"
-;; ;;              (--HYCOMPANY "builtins.e"))
-;; ;;   (assert-in "builtins.eval.--call--"
-;; ;;              (--HYCOMPANY "builtins.eval.")))
-
-
 ;; * Candidates
 ;; ** Compiler
 
@@ -75,24 +76,8 @@
   (setv compiler?
         (fn-> Candidate (.compiler?)))
 
-  (assert (->> ["try" "for*" "+=" "require"]
-            (map compiler?)
-            all))
   (assert (->> "doesn't exist"
             compiler?
-            none?)))
-
-;; ** Macros
-
-(defn test-candidate-macro []
-  (setv macro?
-        (fn-> Candidate (.macro?)))
-
-  (assert (->> ["->" "with" "when"]
-            (map macro?)
-            all))
-  (assert (->> "doesn't exist"
-            macro?
             none?)))
 
 ;; ** Shadows
@@ -149,6 +134,7 @@
 ;; ** Namespacing
 
 (defn test-candidate-namespace-globals []
+  (import itertools)
   (assert-in "from-iterable"
              (-> "itertools.chain"
                (Candidate (Namespace :locals- (locals)))
@@ -202,6 +188,7 @@
              (Candidate (Namespace :locals- (locals)))
              (.annotate))))
 
+
 (defn test-annotate-vars []
   (setv doesnt-exist False)
   (assert= "<instance doesnt-exist>"
@@ -209,15 +196,18 @@
              (Candidate (Namespace :locals- (locals)))
              (.annotate))))
 
+
 (defn test-annotate-compiler []
   (assert= "<compiler try>"
            (-> "try" Candidate (.annotate))))
+
 
 (defn test-annotate-shadow []
   (assert= "<shadowed is>"
            (-> "is" Candidate (.annotate)))
   (assert= "<shadowed get>"
            (-> "get" Candidate (.annotate))))
+
 
 (defn test-annotate-macro []
   (assert= "<macro ->>"
