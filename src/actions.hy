@@ -4,36 +4,38 @@
 (import [src.utils.macros [*]])
 (require [hy.extra.anaphoric [*]])
 (import
-  [src.annotations [annotate]]
-  [src.completion [Completer]]
   [src.inspection [Inspect]]
-  [src.models [Candidate Prefix]])
+  [src.models [Candidate Prefix]]
+  [src.namespace [Namespace]])
+
+
+;; * Actions
 
 (defclass Actions [object]
-  (defn --init-- [self]
-    "Instantiate a Completer with globals set."
-    (setv self.completer (Completer)))
+  (defn --init-- [self &optional globals- locals-]
+    (.set-namespace self globals- locals-))
 
-  (defn reset-completer [self]
-    "Completer reflects changes in globals and imported modules."
-    (.reset self.completer))
+  (defn set-namespace [self &optionals globals- locals-]
+    "Rebuild namespace according to possibly given `globals-` and `locals-`."
+    (setv self.namespace
+          (Namespace globals- locals-)))
 
   (defn complete [self prefix-str]
     "Completions for a prefix string."
     (-> prefix-str
-      Prefix
-      self.completer))
+      (Prefix :namespace namespace)
+      (.complete)))
 
   (defn annotate [self candidate-str]
     "Annotate a candidate string."
     (-> candidate-str
-      Candidate
-      annotate))
+      (Candidate :namespace namespace)
+      (.annotate)))
 
   (defn docs [self candidate-str]
     "Docstring for a candidate string."
     (-> candidate-str
-      Candidate
+      (Candidate :namespace namespace)
       (.get-obj)
       Inspect
       (.docs))))

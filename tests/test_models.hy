@@ -6,7 +6,8 @@
 (import
   pytest
 
-  [src.models [Candidate Prefix]])
+  [src.models [Candidate Prefix]]
+  [src.namespace [Namespace]])
 
 
 ;; * Prefixes
@@ -80,7 +81,10 @@
 
 (defn test-candidate-evaled-modules []
   (import builtins)
-  (assert (= builtins (-> "builtins" Candidate (.evaled?)))))
+  (assert (= builtins
+             (-> "builtins"
+               (Candidate (Namespace :locals- (locals)))
+               (.evaled?)))))
 
 ;; ** Attributes
 
@@ -94,7 +98,9 @@
 (defn test-candidate-attributes-module []
   (import builtins)
   (assert-all-in ["eval" "AssertionError"]
-                 (-> "builtins" Candidate (.attributes))))
+                 (-> "builtins"
+                   (Candidate (Namespace :locals- (locals)))
+                   (.attributes))))
 
 (defn test-candidate-attributes-nested []
   (assert-all-in ["--str--" "--call--"]
@@ -103,14 +109,9 @@
 ;; ** Namespacing
 
 (defn test-candidate-namespace-globals []
-  (import itertools)
-  (assert (none?
-            (-> "itertools.chain"
-              Candidate
-              (.attributes))))
   (assert-in "from-iterable"
              (-> "itertools.chain"
-               (Candidate :namespace (globals))
+               (Candidate (Namespace :locals- (locals)))
                (.attributes))))
 
 (defn test-candidate-namespace-locals []
@@ -121,14 +122,14 @@
               (.attributes))))
   (assert (none?
             (-> "AClass"
-              (Candidate :namespace (globals))
+              (Candidate (Namespace :globals- (globals)))
               (.attributes))))
   (assert-in "--doc--"
              (-> "AClass"
-               (Candidate :local (locals))
+               (Candidate (Namespace :locals- (locals)))
                (.attributes)))
 
   (setv doesnt-exist 1)
   (assert (-> "doesnt-exist"
-            (Candidate :local (locals))
+            (Candidate (Namespace :locals- (locals)))
             (.evaled?))))

@@ -4,57 +4,57 @@
 (import [tests.hytest [*]])
 
 (import
-  [src.annotations [annotate]]
-  [src.models [Candidate]])
+  [src.models [Candidate]]
+  [src.namespace [Namespace]])
 
 
 ;; * Tests
 
 (defn test-annotate-builtin-or-function []
   (assert= "<def print>"
-           (-> "print" Candidate annotate))
+           (-> "print" Candidate (.annotate)))
   (assert= "<def first>"
-           (-> "first" Candidate annotate)))
+           (-> "first" Candidate (.annotate))))
 
 (defn test-annotate-class []
   (defclass AClass [])
   (assert= "<class AClass>"
            (-> "AClass"
-             (Candidate :local (locals))
-             annotate)))
+             (Candidate (Namespace :locals- (locals)))
+             (.annotate))))
 
 (defn test-annotate-module-and-aliases []
   (import itertools)
   (assert= "<module itertools>"
            (-> "itertools"
-             (Candidate :local (locals))
-             annotate))
+             (Candidate (Namespace :locals- (locals)))
+             (.annotate)))
 
   (import [itertools :as it])
   (assert= "<module it>"
            (-> "it"
-             (Candidate :local (locals))
-             annotate)))
+             (Candidate (Namespace :locals- (locals)))
+             (.annotate))))
 
 (defn test-annotate-vars []
   (setv doesnt-exist False)
   (assert= "<instance doesnt-exist>"
            (-> "doesnt-exist"
-             (Candidate :local (locals))
-             annotate)))
+             (Candidate (Namespace :locals- (locals)))
+             (.annotate))))
 
 (defn test-annotate-compiler []
   (assert= "<compiler try>"
-           (-> "try" Candidate annotate)))
+           (-> "try" Candidate (.annotate))))
 
 (defn test-annotate-shadow []
   (assert= "<shadowed is>"
-           (-> "is" Candidate annotate))
+           (-> "is" Candidate (.annotate)))
   (assert= "<shadowed get>"
-           (-> "get" Candidate annotate)))
+           (-> "get" Candidate (.annotate))))
 
 (defn test-annotate-macro []
   (assert= "<macro ->>"
-           (-> "->" Candidate annotate))
+           (-> "->" Candidate (.annotate)))
   (assert= "<macro as->>"
-           (-> "as->" Candidate annotate)))
+           (-> "as->" Candidate (.annotate))))

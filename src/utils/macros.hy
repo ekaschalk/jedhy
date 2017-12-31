@@ -1,6 +1,9 @@
 (require [hy.extra.anaphoric [*]])
 
-(import functools)
+(import
+  functools
+
+  [toolz.curried :as tz])
 
 ;; * Tag Macros
 
