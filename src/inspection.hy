@@ -156,14 +156,15 @@
   (setv docs
         (.format "{}: ({}" pre-args post-args))
   (setv docs
-        (*map docs.replace
-              (->
-                [["..." "#* args"]
-                 ["*args" "#* args"]
-                 ["**kwargs" "#** kwargs"]
-                 ["\n" "newline"]
-                 ["-->" "return"]]
-                zip chain.from-iterable)))
+        (reduce (fn [s [old new]] (.replace s old new))
+                (->
+                  [["..." "#* args"]
+                   ["*args" "#* args"]
+                   ["**kwargs" "#** kwargs"]
+                   ["\n" "newline"]
+                   ["-->" "return"]]
+                  zip chain.from-iterable)
+                docs))
 
   (setv [pre-args args post-args]
         (-split-docs docs))
@@ -177,7 +178,7 @@
           (map str)
           (#$(str.join " "))))
 
-  (+ pre-args args post-args))
+  (+ pre-args formatted-args post-args))
 
 ;; * Inspect
 ;; ** Internal

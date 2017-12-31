@@ -97,3 +97,35 @@
 
   (assert= "a"
            (-> func Signature str)))
+
+;; * Convert Builtin Docs to Lispy
+
+(defn test-builtin-docstring-conversion-maximal-case []
+  (assert=
+    "print: (value #* args &optional [sep ' '] [end 'newline'] [file sys.stdout] [flush False])"
+    (builtin-docs-to-lispy-docs
+      "print(value, ..., sep=' ', end='\n', file=sys.stdout, flush=False)")))
+
+(defn test-builtin-docstring-conversion-optional-only-with-defaults []
+  (assert=
+    "tee: (iterable &optional [n 2]) return tuple of n independent iterators."
+    (builtin-docs-to-lispy-docs
+      "tee(iterable, n=2) --> tuple of n independent iterators.")))
+
+(defn test-builtin-docstring-conversion-optional-only-without-defaults []
+  (assert=
+    "x: (foo &optional bar) - x"
+    (builtin-docs-to-lispy-docs
+      "x(foo, bar=None) - x")))
+
+(defn test-builtin-docstring-conversion-no-docs []
+  (assert=
+    "x: (foo &optional bar)"
+    (builtin-docs-to-lispy-docs
+      "x(foo, bar=None)")))
+
+(defn test-builtin-docstring-conversion-no-optionals []
+  (assert=
+    "combinations: (iterable r) return combinations object"
+    (builtin-docs-to-lispy-docs
+      "combinations(iterable, r) --> combinations object")))
