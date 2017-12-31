@@ -98,7 +98,7 @@
   (assert= "a"
            (-> func Signature str)))
 
-;; * Convert Builtin Docs to Lispy
+;; * Builtin Docs to Lispy Formatting
 
 (defn test-builtin-docstring-conversion-maximal-case []
   (assert=
@@ -106,11 +106,13 @@
     (builtin-docs-to-lispy-docs
       "print(value, ..., sep=' ', end='\n', file=sys.stdout, flush=False)")))
 
+
 (defn test-builtin-docstring-conversion-optional-only-with-defaults []
   (assert=
     "tee: (iterable &optional [n 2]) return tuple of n independent iterators."
     (builtin-docs-to-lispy-docs
       "tee(iterable, n=2) --> tuple of n independent iterators.")))
+
 
 (defn test-builtin-docstring-conversion-optional-only-without-defaults []
   (assert=
@@ -118,14 +120,48 @@
     (builtin-docs-to-lispy-docs
       "x(foo, bar=None) - x")))
 
+
 (defn test-builtin-docstring-conversion-no-docs []
   (assert=
     "x: (foo &optional bar)"
     (builtin-docs-to-lispy-docs
       "x(foo, bar=None)")))
 
+
 (defn test-builtin-docstring-conversion-no-optionals []
   (assert=
     "combinations: (iterable r) return combinations object"
     (builtin-docs-to-lispy-docs
       "combinations(iterable, r) --> combinations object")))
+
+
+(defn test-builtin-docstring-conversion-fails-nonstandard-args-opener []
+  (assert=
+    "foo[ok] bar"
+    (builtin-docs-to-lispy-docs
+      "foo[ok] bar")))
+
+
+(defn test-builtin-docstring-conversion-fails-nonstandard-args-delim []
+  (assert=
+    "foo(not ok ...) - got it?"
+    (builtin-docs-to-lispy-docs
+      "foo(not ok ...) - got it?")))
+
+;; * Inspection
+
+(defn test-inspect-properties []
+  ;; Object name mangled
+  (defn func_foo [])
+  (assert= "func-foo"
+           (-> func_foo Inspect (. obj-name)))
+
+  ;; Classes
+  (defclass Foo [])
+  (assert= "Foo"
+           (-> Foo Inspect (. obj-name)))
+  (assert (-> Foo Inspect (. class?)))
+  (assert (-> Foo.--call-- Inspect (. method-wrapper?)))
+
+  ;; Lambdas
+  (assert (-> (fn []) Inspect (. lambda?))))

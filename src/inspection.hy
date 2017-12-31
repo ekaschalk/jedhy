@@ -222,14 +222,12 @@
 
   #@(property
       (defn obj-name [self]
-        (if self.lambda?
-            "<lambda>"
-            (hy-symbol-unmangle func.--name--))))
+        (hy-symbol-unmangle self.obj.--name--)))
 
   #@(property
       (defn lambda? [self]
         "Is object a lambda?"
-        (= self.obj.--name-- "lambda")))
+        (= self.obj-name "<lambda>")))
 
   #@(property
       (defn class? [self]
