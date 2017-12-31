@@ -22,6 +22,9 @@
     (setv self.namespace (or namespace (globals)))
     (setv self.local (or local (locals))))
 
+  (defn --str-- [self]
+    self.symbol)
+
   (defn --repr-- [self]
     (.format "Candidate<(symbol={}>)" self.symbol))
 
@@ -76,4 +79,11 @@
               (.split prefix "."))
 
         [(->> components butlast (.join ".") Candidate)
-         (->> components last)])))
+         (->> components last hy-symbol-unmangle
+           ;; Hy-symbol-unmangle is inconsistent in case of just "_"
+           ;; This is due to custom of using "_" as the last shell prompt return
+           ;; However it is important it is mangled to "-" in the case of
+           ;; eg. `print._` to complete all the dunder methods.
+           ;; This only matters for the `attr-prefix` so we do not need
+           ;; to use our own version in all places of `hy-symbol-unmangle`.
+           (#%(if (= %1 "_") "-" %1)))])))
