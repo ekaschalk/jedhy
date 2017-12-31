@@ -4,13 +4,11 @@
 (import [tests.hytest [*]])
 
 (import
-  pytest
-
-  [src.models [Candidate Prefix]]
-  [src.namespace [Namespace]])
+  [src.models [Candidate Namespace Prefix]])
 
 
 ;; * Prefixes
+;; ** Building
 
 (deffixture prefixes
   "Prefixes, their candidate symbol, and attr-prefix."
@@ -27,6 +25,48 @@
 
   (assert= prefix.candidate.symbol candidate)
   (assert= prefix.attr-prefix attr-prefix))
+
+;; ** Completion
+
+;; ;; TODO Right now Candidate, Completer, and Prefix all need namespace/local
+;; ;; Either turn into a global datastructure or refactor
+
+;; (defn test-stuff []
+;;   (setv complete
+;;         (Completer))
+
+;;   ;; print isn't in there
+;;   ;; modules aren't in there
+;;   ;; imported macros (fn->) *are* in there
+;;   ;; (print complete.candidates)
+
+;;   ;; (print (complete (Prefix "print._")))
+;;   )
+
+;; ;; (defn test-candidates-globals []
+;; ;;   (assert-all-in ["first" "in" "+" "even?"]
+;; ;;                  (--HYCOMPANY-get-globals)))
+
+;; ;; (defn test-candidates-trimmed []
+;; ;;   (setv candidates
+;; ;;         (--HYCOMPANY-get-globals))
+
+;; ;;   (assert-all-in ["first" "even?"] candidates)
+
+;; ;;   (setv trimmed-candidates
+;; ;;         (--HYCOMPANY-trim-candidates candidates "fi"))
+
+;; ;;   (assert-in "first" trimmed-candidates)
+;; ;;   (assert-not-in "even?" trimmed-candidates))
+
+;; ;; (defn test-candidates-formatted []
+;; ;;   (assert-in "builtins"
+;; ;;              (--HYCOMPANY "built"))
+;; ;;   (assert-in "builtins.eval"
+;; ;;              (--HYCOMPANY "builtins.e"))
+;; ;;   (assert-in "builtins.eval.--call--"
+;; ;;              (--HYCOMPANY "builtins.eval.")))
+
 
 ;; * Candidates
 ;; ** Compiler
@@ -133,3 +173,54 @@
   (assert (-> "doesnt-exist"
             (Candidate (Namespace :locals- (locals)))
             (.evaled?))))
+
+;; ** Annotations
+
+(defn test-annotate-builtin-or-function []
+  (assert= "<def print>"
+           (-> "print" Candidate (.annotate)))
+  (assert= "<def first>"
+           (-> "first" Candidate (.annotate))))
+
+(defn test-annotate-class []
+  (defclass AClass [])
+  (assert= "<class AClass>"
+           (-> "AClass"
+             (Candidate (Namespace :locals- (locals)))
+             (.annotate))))
+
+(defn test-annotate-module-and-aliases []
+  (import itertools)
+  (assert= "<module itertools>"
+           (-> "itertools"
+             (Candidate (Namespace :locals- (locals)))
+             (.annotate)))
+
+  (import [itertools :as it])
+  (assert= "<module it>"
+           (-> "it"
+             (Candidate (Namespace :locals- (locals)))
+             (.annotate))))
+
+(defn test-annotate-vars []
+  (setv doesnt-exist False)
+  (assert= "<instance doesnt-exist>"
+           (-> "doesnt-exist"
+             (Candidate (Namespace :locals- (locals)))
+             (.annotate))))
+
+(defn test-annotate-compiler []
+  (assert= "<compiler try>"
+           (-> "try" Candidate (.annotate))))
+
+(defn test-annotate-shadow []
+  (assert= "<shadowed is>"
+           (-> "is" Candidate (.annotate)))
+  (assert= "<shadowed get>"
+           (-> "get" Candidate (.annotate))))
+
+(defn test-annotate-macro []
+  (assert= "<macro ->>"
+           (-> "->" Candidate (.annotate)))
+  (assert= "<macro as->>"
+           (-> "as->" Candidate (.annotate))))

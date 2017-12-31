@@ -5,8 +5,7 @@
 (require [hy.extra.anaphoric [*]])
 (import
   [src.inspection [Inspect]]
-  [src.models [Candidate Prefix]]
-  [src.namespace [Namespace]])
+  [src.models [Candidate Namespace Prefix]])
 
 
 ;; * Actions

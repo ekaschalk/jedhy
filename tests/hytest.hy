@@ -1,5 +1,6 @@
 (require [src.utils.macros [*]])
 (require [hy.extra.anaphoric [*]])
+(import pytest)
 
 ;; * Asserts
 
