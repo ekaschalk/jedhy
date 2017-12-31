@@ -1,4 +1,5 @@
 (require [src.utils.macros [*]])
+(import [src.utils.macros [*]])
 (require [hy.extra.anaphoric [*]])
 (import
   hy hy.compiler hy.macros
@@ -8,32 +9,41 @@
 (defclass Completer [object]
   "Instantiates global candidates, then called with prefixes for completion."
 
-  (defn --init-- [self]
+  (defn --init-- [self &optional namespace local]
+    (setv self.namespace (or namespace (globals)))
+    (setv self.local (or local (locals)))
+
     (setv self.candidates (.-collect-globals self)))
 
-  #@(staticmethod
-      (defn -collect-globals []
-        "Collect globals from (locals), macros, and the compile-table."
-        (->> hy.macros.-hy-macros
-          (.values)
-          (map dict.keys)
-          (chain (.keys (globals)) (.keys (locals)) hy.compiler.-compile-table)
-          flatten
-          (map #%(if (instance? str %1) %1 %1.--name--))
-          (map hy-symbol-unmangle)
-          distinct
-          tuple)))
+  (defn -collect-globals [self]
+    "Collect globals from (locals), macros, and the compile-table."
+    (hy.eval `(import [hy.core.shadow [*]] [hy.core.macros [*]]))
 
-  (defn reset [self]
+    (->> hy.macros.-hy-macros
+      (.values)
+      (map dict.keys)
+      (chain (.keys self.namespace)
+             (.keys self.local)
+             hy.compiler.-compile-table)
+      flatten
+      (map #%(if (instance? str %1) %1 %1.--name--))
+      (map hy-symbol-unmangle)
+      distinct
+      tuple))
+
+  (defn reset [self &optional namespace local]
     "Reconstruct global candidates to detect changes in macros/locals."
-    (.--init-- self))
+    (.--init-- self namespace local))
 
   (defn --call-- [self prefix]
     "Get candidates for a given Prefix."
     (setv candidates
-          (or (.attributes self.prefix.candidate) self.candidates))
+          (or (.attributes prefix.candidate) self.candidates))
+
+    (print prefix.attr-prefix)
+    (print candidates)
 
     (some->> candidates
       (filter #%(.startswith %1 prefix.attr-prefix))
-      (map #$(+ candidate "."))
+      (map #$(+ (str prefix.candidate) "."))
       tuple)))

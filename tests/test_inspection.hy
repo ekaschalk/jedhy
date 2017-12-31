@@ -4,8 +4,7 @@
 (import [tests.hytest [*]])
 
 (import
-  [src.inspection [Parameter
-                   Signature
+  [src.inspection [Signature
                    Inspect
                    builtin-docs-to-lispy-docs]])
 
