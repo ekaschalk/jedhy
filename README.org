@@ -1,8 +1,15 @@
 * Jedhy
 
-Inspired by python's ~jedi~ static code analysis tool, ~jedhy~ provides basic
-support for autocompletion and documentation introspection for ~Hy~.
+~jedhy~ is a static code analysis tool providing autocompletion and
+documentation introspection for [[https://github.com/hylang/hy][Hy]], a lisp embedded in Python.
 
-It is used in Emacs [[https://github.com/hylang/hy-mode][hy-mode]] IDE which I maintain.
-Currently a scaled back version of jedhy is used - automated installation from
-pypy still needs to be implemented.
+Leveraged in Emacs [[https://github.com/hylang/hy-mode][hy-mode]] IDE which I maintain.
+
+Current Features:
+1. Complete macros, compile table, and all standard python constructs with
+   mangling handled.
+2. Documentation introspection and formatting (eg. for Emacs ~Eldoc mode~).
+3. Annotations (eg. for Emacs ~Company mode~).
+
+Jedhy is fully tested. See the tests for examples. ~src.actions~ exposes the
+API.

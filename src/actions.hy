@@ -22,19 +22,19 @@
   (defn complete [self prefix-str]
     "Completions for a prefix string."
     (-> prefix-str
-      (Prefix :namespace namespace)
+      (Prefix :namespace self.namespace)
       (.complete)))
 
   (defn annotate [self candidate-str]
     "Annotate a candidate string."
     (-> candidate-str
-      (Candidate :namespace namespace)
+      (Candidate :namespace self.namespace)
       (.annotate)))
 
   (defn docs [self candidate-str]
     "Docstring for a candidate string."
     (-> candidate-str
-      (Candidate :namespace namespace)
+      (Candidate :namespace self.namespace)
       (.get-obj)
       Inspect
       (.docs))))

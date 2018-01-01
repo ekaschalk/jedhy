@@ -5,7 +5,9 @@
   builtins
 
   hy hy.compiler hy.macros
-  [hy.lex.parser [hy-symbol-mangle hy-symbol-unmangle]])
+  [hy.lex.parser [hy-symbol-mangle hy-symbol-unmangle]]
+  [hy.core.language [*]] [hy.core.macros [*]]  ; for Namespace's defaults
+  )
 
 ;; TODO Blacklist some names ("koan" macro, "copyright" from allkeys, ...)
 

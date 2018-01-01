@@ -70,10 +70,39 @@
 
 ;; ** Completion
 
-(defn test-completion []
+(defn test-completion-builtins []
   (assert-in "print"
-             (.complete (Prefix "prin"))))
+             (.complete (Prefix "prin")))
+  (assert-in "ArithmeticError"
+             (.complete (Prefix "Ar"))))
 
+
+(defn test-completion-method-attributes []
+  (assert-in "print.--call--"
+             (.complete (Prefix "print.")))
+  (assert-in "print.--call--"
+             (.complete (Prefix "print.__c"))))
+
+
+(defn test-completion-macros []
+  (assert-in "->>"
+             (.complete (Prefix "-"))))
+
+
+(defn test-completion-compiler []
+  (assert-in "try"
+             (.complete (Prefix "tr"))))
+
+
+(defn test-completion-core-language []
+  (assert-in "iterable?"
+             (.complete (Prefix "iter"))))
+
+
+(defn test-completion-modules []
+  (import itertools)
+  (assert-in "itertools.tee"
+             (.complete (Prefix "itertools.t" (Namespace :locals- (locals))))))
 
 ;; * Candidates
 ;; ** Compiler
