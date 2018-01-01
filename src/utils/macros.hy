@@ -71,3 +71,29 @@
       (setv ret
             `((-opener-or-none-last ~(first node)) ~@(rest node)))))
   ret)
+
+
+;; * Misc
+
+(defn rail [pred f g x]
+  "Partial ternary for evaluation with thread-last."
+  (if (pred x) (f x) (g x)))
+
+
+(defn -allkeys [d &kwonly [parents (,)]]
+  "In-order tuples of keys of nested, variable-length dict."
+  (if (isinstance d (, list tuple))
+      []
+      #t(->> d
+          (tz.keymap (fn [k] (+ parents (, k))))
+          dict.items
+          (map #$(rail (fn [[_ v]] (isinstance v dict))
+                       (fn [[k v]] (-allkeys v :parents k))
+                       (fn [[k _]] [k])))
+          tz.concat)))
+
+(defn allkeys [d]
+  (->> d
+    -allkeys
+    (map last)
+    tuple))
