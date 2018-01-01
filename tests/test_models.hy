@@ -39,7 +39,7 @@
 ;; ** Names
 
 (defn test-namespace-all-names []
-  (assert-all-in ["HySet" "not?" "for" "->" "ap-map" "first"]
+  (assert-all-in ["HySet" "not?" "for" "->" "ap-map" "first" "print"]
                  (. (Namespace) names)))
 
 
@@ -48,7 +48,6 @@
   (defn foo [])
   (assert-all-in ["foo" "x"]
                  (. (Namespace :locals- (locals)) names)))
-
 
 ;; * Prefixes
 ;; ** Building
@@ -68,6 +67,13 @@
 
   (assert= prefix.candidate.symbol candidate)
   (assert= prefix.attr-prefix attr-prefix))
+
+;; ** Completion
+
+(defn test-completion []
+  (assert-in "print"
+             (.complete (Prefix "prin"))))
+
 
 ;; * Candidates
 ;; ** Compiler

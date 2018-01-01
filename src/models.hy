@@ -7,6 +7,8 @@
   hy hy.compiler hy.macros
   [hy.lex.parser [hy-symbol-mangle hy-symbol-unmangle]])
 
+;; TODO Blacklist some names ("koan" macro, "copyright" from allkeys, ...)
+
 ;; * Namespace
 
 ;; eval due to issue #1467: https://github.com/hylang/hy/issues/1467
@@ -58,8 +60,8 @@
   (defn -collect-names [self]
     "Collect all global names from (locals), macros, and the compile-table."
     (->>
-      (chain (.keys self.globals)
-             (.keys self.locals)
+      (chain (allkeys self.globals)
+             (allkeys self.locals)
              (.keys self.macros)
              (.keys self.compile-table))
       flatten  ; Required for globals/locals
@@ -87,6 +89,9 @@
 
   (defn --repr-- [self]
     (.format "Candidate<(symbol={}>)" self.symbol))
+
+  (defn --bool-- [self]
+    (bool self.symbol))
 
   (defn compiler? [self]
     "Is candidate a compile table construct and return it."
@@ -161,19 +166,24 @@
 
     (setv [self.candidate
            self.attr-prefix]
-          (.split-prefix self prefix)))
+          (.split-prefix self prefix self.namespace)))
 
   (defn --repr-- [self]
     (.format "Prefix<(prefix={})>" self.prefix))
 
   #@(staticmethod
-      (defn split-prefix [prefix]
+      (defn split-prefix [prefix namespace]
         "Split prefix on last dot accessor, returning an obj, attr pair."
         (setv components
               (.split prefix "."))
 
-        [(->> components butlast (.join ".") Candidate)
-         (->> components last hy-symbol-unmangle
+        [(->> components
+           butlast
+           (.join ".")
+           (Candidate :namespace namespace))
+         (->> components
+           last
+           hy-symbol-unmangle
            ;; Hy-symbol-unmangle is inconsistent in case of just "_"
            ;; This is due to custom of using "_" as the last shell prompt return
            ;; However it is important it is mangled to "-" in the case of
@@ -189,5 +199,7 @@
 
     (some->> candidates
       (filter #%(.startswith %1 self.attr-prefix))
-      (map #$(+ (str self.candidate) "."))
+      (map #%(if self.candidate
+                 (+ (str self.candidate) "." %1)
+                 %1))
       tuple)))
