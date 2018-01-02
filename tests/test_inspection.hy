@@ -1,10 +1,10 @@
-(require [src.utils.macros [*]])
+(require [jedhy.utils.macros [*]])
 (require [hy.extra.anaphoric [*]])
 (require [tests.hytest [*]])
 (import [tests.hytest [*]])
 
 (import
-  [src.inspection [Signature
+  [jedhy.inspection [Signature
                    Inspect
                    builtin-docs-to-lispy-docs]])
 

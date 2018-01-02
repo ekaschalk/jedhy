@@ -1,11 +1,11 @@
 "Expose jedhy `Actions` for IDE and metaprogramming use-cases."
 
-(require [src.utils.macros [*]])
-(import [src.utils.macros [*]])
+(require [jedhy.utils.macros [*]])
+(import [jedhy.utils.macros [*]])
 (require [hy.extra.anaphoric [*]])
 (import
-  [src.inspection [Inspect]]
-  [src.models [Candidate Namespace Prefix]])
+  [jedhy.inspection [Inspect]]
+  [jedhy.models [Candidate Namespace Prefix]])
 
 
 ;; * Actions

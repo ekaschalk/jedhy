@@ -1,10 +1,10 @@
-(require [src.utils.macros [*]])
+(require [jedhy.utils.macros [*]])
 (require [hy.extra.anaphoric [*]])
 (require [tests.hytest [*]])
 (import [tests.hytest [*]])
 
 (import
-  [src.models [Candidate Namespace Prefix]])
+  [jedhy.models [Candidate Namespace Prefix]])
 
 
 ;; * Namespace

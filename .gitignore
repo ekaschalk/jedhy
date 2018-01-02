@@ -1,2 +1,5 @@
 .cache*
+build*
+dist*
+jedhy.egg*
 __pycache__*

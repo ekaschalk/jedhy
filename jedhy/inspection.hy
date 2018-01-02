@@ -1,5 +1,5 @@
-(require [src.utils.macros [*]])
-(import [src.utils.macros [*]])
+(require [jedhy.utils.macros [*]])
+(import [jedhy.utils.macros [*]])
 (require [hy.extra.anaphoric [*]])
 (import
   inspect

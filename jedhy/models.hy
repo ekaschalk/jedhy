@@ -1,5 +1,5 @@
-(require [src.utils.macros [*]])
-(import [src.utils.macros [*]])
+(require [jedhy.utils.macros [*]])
+(import [jedhy.utils.macros [*]])
 (require [hy.extra.anaphoric [*]])
 (import
   builtins
@@ -66,7 +66,6 @@
              (allkeys self.locals)
              (.keys self.macros)
              (.keys self.compile-table))
-      flatten  ; Required for globals/locals
       (map self.-keys-to-names)
       distinct
       tuple))
