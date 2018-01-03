@@ -1,4 +1,4 @@
-(require [jedhy.utils.macros [*]])
+(require [jedhy.macros [*]])
 (require [hy.extra.anaphoric [*]])
 (import pytest)
 

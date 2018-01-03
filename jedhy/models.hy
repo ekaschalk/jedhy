@@ -1,5 +1,5 @@
-(require [jedhy.utils.macros [*]])
-(import [jedhy.utils.macros [*]])
+(require [jedhy.macros [*]])
+(import [jedhy.macros [*]])
 (require [hy.extra.anaphoric [*]])
 (import
   builtins
@@ -72,7 +72,10 @@
 
   (defn eval [self mangled-symbol]
     "Evaluate `mangled-symbol' within the Namespace."
-    (builtins.eval mangled-symbol self.globals self.locals)))
+    (builtins.eval mangled-symbol self.globals self.locals))
+
+  (defn hy-eval [self mangled-symbol]
+    (hy.eval (HySymbol mangled-symbol))))
 
 ;; * Candidate
 
@@ -113,9 +116,16 @@
     (try (.eval self.namespace self.mangled)
          (except [e Exception] None)))
 
+  (defn hy-evaled? [self]
+    "Is candidate hy evaluatable and return it."
+    (try (.hy-eval self.namespace self.mangled)
+         (except [e Exception] None)))
+
   (defn get-obj [self]
     "Get object for underlying candidate."
-    (or (.compiler? self) (.macro? self) (.evaled? self)))
+    ;; Compiler *must* come after .hy-evaled to catch the shadowed,
+    ;; rather than the compile table, objects like `+`.
+    (or (.macro? self) (.evaled? self) (.hy-evaled? self) (.compiler? self)))
 
   (defn attributes [self]
     "Return attributes for obj if they exist."

@@ -1,7 +1,7 @@
 "Expose jedhy `Actions` for IDE and metaprogramming use-cases."
 
-(require [jedhy.utils.macros [*]])
-(import [jedhy.utils.macros [*]])
+(require [jedhy.macros [*]])
+(import [jedhy.macros [*]])
 (require [hy.extra.anaphoric [*]])
 (import
   [jedhy.inspection [Inspect]]
@@ -14,7 +14,7 @@
   (defn --init-- [self &optional globals- locals-]
     (.set-namespace self globals- locals-))
 
-  (defn set-namespace [self &optionals globals- locals-]
+  (defn set-namespace [self &optional globals- locals-]
     "Rebuild namespace according to possibly given `globals-` and `locals-`."
     (setv self.namespace
           (Namespace globals- locals-)))

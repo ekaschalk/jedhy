@@ -1,7 +1,10 @@
+# import hy
 from setuptools import find_packages, setup
+from setuptools.command.install import install
 
 __AUTHOR__ = 'Eric Kaschalk'
 __AUTHOR_EMAIL__ = 'ekaschalk@gmail.com'
+
 
 setup(name='jedhy',
       version=1,
@@ -13,7 +16,11 @@ setup(name='jedhy',
       url='https://github.com/ekaschalk/jedhy',
       license='MIT',
       keywords='python hy completion introspection refactoring emacs vim',
-      packages=find_packages(exclude=["tests"]),
+
+      packages=["jedhy", "jedhy"],
+      package_data={
+          'jedhy': ['*.hy', '__pycache__/*'],
+      },
 
       # install_requires=[],
       # include_package_data=True,

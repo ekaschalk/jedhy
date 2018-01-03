@@ -1,12 +1,12 @@
-(require [jedhy.utils.macros [*]])
+(require [jedhy.macros [*]])
 (require [hy.extra.anaphoric [*]])
 (require [tests.hytest [*]])
 (import [tests.hytest [*]])
 
 (import
   [jedhy.inspection [Signature
-                   Inspect
-                   builtin-docs-to-lispy-docs]])
+                     Inspect
+                     builtin-docs-to-lispy-docs]])
 
 ;; * Argspec Extraction
 ;; ** Maximal Cases
@@ -214,6 +214,10 @@
 
 
 (defn test-inspect-docs-instance []
-  (setv x 1)
   (assert= "int: (&optional [x 0]) -> integer"
-           (-> x Inspect (.docs))))
+           (-> 1 Inspect (.docs))))
+
+
+(defn test-inspect-docs-shadow []
+  (assert= "-: (a1 #* a-rest) - Shadowed `-` operator subtracts each `a-rest` from `a1`."
+           (-> - Inspect (.docs))))

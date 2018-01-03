@@ -1,5 +1,5 @@
-(require [jedhy.utils.macros [*]])
-(import [jedhy.utils.macros [*]])
+(require [jedhy.macros [*]])
+(import [jedhy.macros [*]])
 (require [hy.extra.anaphoric [*]])
 (import
   inspect
@@ -11,7 +11,7 @@
 
 (defclass Parameter [object]
   (defn --init-- [self symbol &optional default]
-    (setv self.symbol symbol)
+    (setv self.symbol (hy-symbol-unmangle symbol))
     (setv self.default default))
 
   (defn --str-- [self]
@@ -36,8 +36,8 @@
     (setv self.args args)
     (setv self.defaults defaults)
     (setv self.kwargs kwargs)
-    (setv self.varargs (and argspec.varargs [argspec.varargs]))
-    (setv self.varkw (and argspec.varkw [argspec.varkw])))
+    (setv self.varargs (and argspec.varargs [(hy-symbol-unmangle argspec.varargs)]))
+    (setv self.varkw (and argspec.varkw [(hy-symbol-unmangle argspec.varkw)])))
 
   #@(staticmethod
       (defn -args-from [argspec]

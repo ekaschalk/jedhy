@@ -1,4 +1,4 @@
-(require [jedhy.utils.macros [*]])
+(require [jedhy.macros [*]])
 (require [hy.extra.anaphoric [*]])
 (require [tests.hytest [*]])
 (import [tests.hytest [*]])
@@ -33,7 +33,7 @@
 
 
 (defn test-namespace-shadows []
-  (assert-all-in ["get" "is" "not?"]
+  (assert-all-in ["get" "is" "not?" "+"]
                  (. (Namespace) shadows)))
 
 ;; ** Names
