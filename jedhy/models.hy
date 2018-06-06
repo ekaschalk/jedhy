@@ -20,10 +20,10 @@
     (import [hy.compiler [-special-form-compilers :as -compile-table]])))
 
 
-;; TODO This is a temp workaround regression for mangling empty strs
 ;; TODO Blacklist some names ("koan" macro, "copyright" from allkeys, ...)
 
 (defn hy-symbol-mangle [s]
+  ;; TODO This is a temp workaround regression for mangling empty strs
   (if (!= s "") (mangle s) (str)))
 
 
@@ -87,10 +87,13 @@
 
   (defn eval [self mangled-symbol]
     "Evaluate `mangled-symbol' within the Namespace."
-    (builtins.eval mangled-symbol self.globals self.locals))
+    (try (hy.eval (read-str mangled-symbol)
+                  :namespace self.globals)
+         (except [e NameError]
 
-  (defn hy-eval [self mangled-symbol]
-    (hy.eval (HySymbol mangled-symbol))))
+           (try (hy.eval (read-str mangled-symbol)
+                         :namespace self.locals)
+                (except [] None))))))
 
 ;; * Candidate
 
@@ -128,27 +131,22 @@
 
   (defn evaled? [self]
     "Is candidate evaluatable and return it."
-    (try (.eval self.namespace self.mangled)
-         (except [e Exception] None)))
-
-  (defn hy-evaled? [self]
-    "Is candidate hy evaluatable and return it."
-    (try (.hy-eval self.namespace self.mangled)
+    (try (.eval self.namespace self.symbol)
          (except [e Exception] None)))
 
   (defn get-obj [self]
     "Get object for underlying candidate."
-    ;; Compiler *must* come after .hy-evaled to catch the shadowed,
-    ;; rather than the compile table, objects like `+`.
-    (or (.macro? self) (.evaled? self) (.hy-evaled? self) (.compiler? self)))
+    ;; Compiler *must* come after .evaled to catch objects that are
+    ;; both shadowed and in the compile table as shadowed (eg. `+`)
+    (or (.macro? self) (.evaled? self) (.compiler? self)))
 
   (defn attributes [self]
     "Return attributes for obj if they exist."
-    (->> self
-      (.evaled?)
-      dir
-      (map hy-symbol-unmangle)
-      tuple))
+    (setv obj
+          (.evaled? self))  ; TODO Should this be get-obj? instead
+
+    (when obj
+      (->> obj dir (map hy-symbol-unmangle) tuple)))
 
   #@(staticmethod
       (defn -translate-class [klass]
@@ -168,15 +166,20 @@
           (.evaled? self))
 
     (setv annotation
-          (cond [(not (none? obj))  ; Obj could be instance of bool
-                 (.-translate-class self obj.--class--.--name--)]
-                ;; Shadow takes priority over compiler annotations
-                [(.shadow? self)
-                 "shadowed"]
-                [(.compiler? self)
-                 "compiler"]
-                [(.macro? self)
-                 "macro"]))
+          (cond
+            ;; Shadow takes priority over compiler annotations
+            [(.shadow? self)
+             "shadowed"]
+
+            ;; Obj could be instance of bool
+            [(not (none? obj))
+             (self.-translate-class obj.--class--.--name--)]
+
+            [(.compiler? self)
+             "compiler"]
+
+            [(.macro? self)
+             "macro"]))
 
     (.format "<{} {}>" annotation self)))
 
@@ -203,31 +206,38 @@
         (setv components
               (.split prefix "."))
 
-        [(->> components
-           butlast
-           (.join ".")
-           (Candidate :namespace namespace))
-         (->> components
-           last
-           hy-symbol-unmangle
-           ;; Hy-symbol-unmangle is inconsistent in case of just "_"
-           ;; This is due to custom of using "_" as the last shell prompt return
-           ;; However it is important it is mangled to "-" in the case of
-           ;; eg. `print._` to complete all the dunder methods.
-           ;; This only matters for the `attr-prefix` so we do not need
-           ;; to use our own version in all places of `hy-symbol-unmangle`.
+        (setv candidate
+              (->> components
+                butlast
+                (.join ".")
+                (Candidate :namespace namespace)))
+        (setv attr-prefix
+              (->> components
+                last
+                hy-symbol-unmangle
+                ;; Hy-symbol-unmangle is inconsistent in case of just "_"
+                ;; due to custom of using "_" as the last shell prompt return
+                ;; However it is important it is mangled to "-" in the case of
+                ;; eg. `print._` to complete all the dunder methods.
+                ;; This only matters for the `attr-prefix` so we do not need
+                ;; to use our own version in all places of `hy-symbol-unmangle`.
 
-           ;; NOTE Won't be needed for 0.15
-           (#%(if (= %1 "_") "-" %1))
-           )]))
+                ;; NOTE Won't be needed for 0.15, above has been deprecated
+                (#%(if (= %1 "_") "-" %1))))
+
+        [candidate attr-prefix]))
 
   (defn complete [self]
     "Get candidates for a given Prefix."
+    (when (and (not (.get-obj self.candidate))
+               (in "." self.prefix))
+      (return (,)))
+
     (setv candidates
           (or (.attributes self.candidate) self.namespace.names))
 
     (->> candidates
-      (filter #%(.startswith %1 self.attr-prefix))
+      (filter #f(str.startswith self.attr-prefix))
       (map #%(if self.candidate
                  (+ (str self.candidate) "." %1)
                  %1))

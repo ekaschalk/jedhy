@@ -1,6 +1,5 @@
-;; (require [jedhy.macros [*]])
-(require [hy.extra.anaphoric [*]])
 (import pytest)
+
 
 ;; * Asserts
 
@@ -9,12 +8,6 @@
 
 (defn assert-in [x y]
   (assert (in x y)))
-
-(defn assert-not-in [x y]
-  (assert (not (in x y))))
-
-(defn assert-all= [x y]
-  (assert (->> (zip-longest x y) (*map =) all)))
 
 (defn assert-all-in [x y]
   (assert (->> x (map (fn [z] (in z y))) all)))
@@ -36,5 +29,4 @@
      ~@body))
 
 (defmacro assert-raises [error &rest code]
-  ;; `(with [(pytest.raises ~error)] ~@code))  ; Once PR 1320 is merged
-  `(pytest.raises ~error (fn [] ~@code)))
+  `(with [(pytest.raises ~error)] ~@code))
