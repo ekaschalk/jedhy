@@ -8,8 +8,6 @@
   (except [e ImportError]
     (import [hy.lex.parser [unmangle :as hy-symbol-unmangle]])))
 
-
-
 ;; * Parameters
 
 (defclass Parameter [object]

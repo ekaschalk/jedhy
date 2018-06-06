@@ -176,6 +176,12 @@
            (-> func_foo Inspect (. obj-name))))
 
 
+(defn test-inspect-obj-name-special-chars []
+  (defn loud-noises/! [] "Rabble!" "")
+  (assert= "loud-noises/!: () - Rabble!"
+           (-> loud-noises/! Inspect (.docs))))
+
+
 (defn test-inspect-class-and-method-wrappers []
   (defclass Foo [])
   (assert= "Foo"
