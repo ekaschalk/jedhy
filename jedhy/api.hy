@@ -1,4 +1,4 @@
-"Expose jedhy `Actions` for IDE and metaprogramming use-cases."
+"Expose jedhy's `API` for IDE and metaprogramming use-cases."
 
 (require [jedhy.macros [*]])
 (import [jedhy.macros [*]])
@@ -10,9 +10,9 @@
 
 ;; * Actions
 
-(defclass Actions [object]
+(defclass API [object]
   (defn --init-- [self &optional globals- locals-]
-    (.set-namespace self globals- locals-))
+    (self.set-namespace globals- locals-))
 
   (defn set-namespace [self &optional globals- locals-]
     "Rebuild namespace according to possibly given `globals-` and `locals-`."

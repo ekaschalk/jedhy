@@ -11,5 +11,6 @@ Current Features:
 2. Documentation introspection and formatting (eg. for Emacs ~Eldoc mode~).
 3. Annotations (eg. for Emacs ~Company mode~).
 
-Jedhy is fully tested. See the tests for examples. ~src.actions~ exposes the
-API.
+Jedhy is fully tested. See tests for examples.
+
+See ~jedhy.api~ for usage.
