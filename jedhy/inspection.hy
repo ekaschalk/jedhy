@@ -1,11 +1,14 @@
 (require [jedhy.macros [*]])
 (import [jedhy.macros [*]])
 (require [hy.extra.anaphoric [*]])
-(import
-  inspect
+(import inspect hy)
 
-  hy
-  [hy.lex.parser [hy-symbol-unmangle]])
+(try
+  (import [hy.lex.parser [hy-symbol-unmangle]])
+  (except [e ImportError]
+    (import [hy.lex.parser [unmangle :as hy-symbol-unmangle]])))
+
+
 
 ;; * Parameters
 
@@ -44,7 +47,7 @@
         (setv args
               (-> argspec.defaults (or []) len (drop-last argspec.args) list))
 
-        (some->> args
+        (->> args
           (map Parameter)
           tuple)))
 
@@ -53,13 +56,13 @@
         (setv default-args
               (-> argspec cls.-args-from len (drop argspec.args) list))
 
-        (some->> (or default-args None)
+        (->> (or default-args None)
           (#%(map Parameter %1 argspec.defaults))
           tuple)))
 
   #@(staticmethod
       (defn -kwargsonly-from [argspec]
-        (some->>
+        (->>
           argspec.kwonlyargs
           (remove #%(in %1 (.keys (or argspec.kwonlydefaults {}))))
           (map Parameter)
@@ -67,7 +70,7 @@
 
   #@(staticmethod
       (defn -kwonlydefaults-from [argspec]
-        (some->>
+        (->>
           argspec.kwonlydefaults
           (.items)
           (*map Parameter)
@@ -95,7 +98,8 @@
           (+ opener))))
 
   #@(classmethod
-      (defn -acc-lispy-repr [cls formatted-argspec [args opener]]
+      (defn -acc-lispy-repr [cls formatted-argspec args-opener]
+        (setv [args opener] args-opener)
         (+ formatted-argspec
            (if (and formatted-argspec args) " " "")
            (cls.-format-args args opener))))
@@ -135,8 +139,8 @@
 
 (defn -optional-arg-idx [args]
   "First idx of an arg with a default in list of args strings."
-  (defn -at-arg-with-default? [[idx arg]]
-    (when (in "=" arg) idx))
+  (defn -at-arg-with-default? [idx-arg]
+    (when (in "=" (second idx-arg)) (first idx-arg)))
 
   ;; Can't use `some` since idx could be zero
   (->> args enumerate (map -at-arg-with-default?) (remove none?) first))
@@ -162,7 +166,7 @@
   (setv [pre-args args post-args]
         (->> post-args
           (.format "{}: ({}" pre-args)
-          (reduce (fn [s [old new]] (.replace s old new))
+          (reduce (fn [s old-new] (.replace s (first old-new) (second old-new)))
                   (->
                     [["..." "#* args"]
                      ["*args" "#* args"]

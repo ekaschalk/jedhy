@@ -5,11 +5,27 @@
   builtins
 
   hy hy.compiler hy.macros
-  [hy.lex.parser [hy-symbol-mangle hy-symbol-unmangle]]
   [hy.core.language [*]] [hy.core.macros [*]]  ; for Namespace's defaults
   )
 
+(try
+   (import [hy.lex.parser [hy-symbol-unmangle
+                           hy-symbol-mangle :as mangle]])
+   (except [e ImportError]
+     (import [hy.lex.parser [unmangle :as hy-symbol-unmangle
+                             mangle]])))
+(try
+  (import [hy.compiler [-compile-table]])
+  (except [e ImportError]
+    (import [hy.compiler [-special-form-compilers :as -compile-table]])))
+
+
+;; TODO This is a temp workaround regression for mangling empty strs
 ;; TODO Blacklist some names ("koan" macro, "copyright" from allkeys, ...)
+
+(defn hy-symbol-mangle [s]
+  (if (!= s "") (mangle s) (str)))
+
 
 ;; * Namespace
 
@@ -42,8 +58,7 @@
 
   (defn -collect-compile-table [self]
     "Collect compile table as dict."
-    (->> hy.compiler.-compile-table
-      (tz.keymap self.-keys-to-names)))
+    (tz.keymap self.-keys-to-names -compile-table))
 
   (defn -collect-macros [self]
     "Collect and merge macros from all namespaces as single dict."
@@ -129,7 +144,7 @@
 
   (defn attributes [self]
     "Return attributes for obj if they exist."
-    (some->> self
+    (->> self
       (.evaled?)
       dir
       (map hy-symbol-unmangle)
@@ -201,14 +216,17 @@
            ;; eg. `print._` to complete all the dunder methods.
            ;; This only matters for the `attr-prefix` so we do not need
            ;; to use our own version in all places of `hy-symbol-unmangle`.
-           (#%(if (= %1 "_") "-" %1)))]))
+
+           ;; NOTE Won't be needed for 0.15
+           (#%(if (= %1 "_") "-" %1))
+           )]))
 
   (defn complete [self]
     "Get candidates for a given Prefix."
     (setv candidates
           (or (.attributes self.candidate) self.namespace.names))
 
-    (some->> candidates
+    (->> candidates
       (filter #%(.startswith %1 self.attr-prefix))
       (map #%(if self.candidate
                  (+ (str self.candidate) "." %1)
