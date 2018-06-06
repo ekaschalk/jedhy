@@ -34,6 +34,7 @@
     (setv [args defaults kwargs]
           ((juxt self.-args-from self.-defaults-from self.-kwargs-from)
             argspec))
+    (setv varargs)
 
     (setv self.func func)
     (setv self.args args)
@@ -43,41 +44,52 @@
     (setv self.varkw (and argspec.varkw [(hy-symbol-unmangle argspec.varkw)])))
 
   #@(staticmethod
-      (defn -args-from [argspec]
-        (setv args
-              (-> argspec.defaults (or []) len (drop-last argspec.args) list))
+      (defn -parametrize [symbols &optional [defaults (repeat None)]]
+        "Construct many Parameter for `symbols` with possibly defaults."
+        (when symbols
+          (tuple (map Parameter symbols defaults)))))
 
-        (->> args
-          (map Parameter)
-          tuple)))
+  #@(staticmethod
+      (defn -args-from [cls argspec]
+        "Extract args without defined defaults from `argspec`."
+        (setv symbols
+              (drop-last (len (or argspec.defaults []))
+                         argspec.args))
+
+        (cls.-parametrize symbols)))
 
   #@(classmethod
       (defn -defaults-from [cls argspec]
-        (setv default-args
-              (-> argspec cls.-args-from len (drop argspec.args) list))
+        "Extract args with defined defaults from `argspec`."
+        (setv args-without-defaults
+              (cls.-args-from argspec))
+        (setv symbols
+              (drop (len args-without-defaults)
+                    argspec.args))
 
-        (->> (or default-args None)
-          (#%(map Parameter %1 argspec.defaults))
-          tuple)))
+        (cls.-parametrize symbols argspec.defaults)))
 
   #@(staticmethod
       (defn -kwargsonly-from [argspec]
-        (->>
-          argspec.kwonlyargs
-          (remove #%(in %1 (.keys (or argspec.kwonlydefaults {}))))
-          (map Parameter)
-          tuple)))
+        "Extract kwargs without defined defaults from `argspec`."
+        (setv kwargs-with-defaults
+              (.keys (or argspec.kwonlydefaults {})))
+        (setv symbols
+              (remove #f(in kwargs-with-defaults) argspec.kwonlyargs))
+
+        (cls.-parametrize symbols)))
 
   #@(staticmethod
       (defn -kwonlydefaults-from [argspec]
-        (->>
-          argspec.kwonlydefaults
-          (.items)
-          (*map Parameter)
-          tuple)))
+        "Extract kwargs with defined defaults from `argspec`."
+        (setv [symbols defaults]
+              (zip #* (.items argspec.kwonlydefaults)))
+
+        (cls.-parametrize symbols defaults)))
 
   #@(classmethod
       (defn -kwargs-from [cls argspec]
+        "Chain kwargs with and without defaults, since `argspec` doesn't order."
         (->> argspec
           ((juxt cls.-kwargsonly-from cls.-kwonlydefaults-from))
           flatten
@@ -92,33 +104,34 @@
         (setv opener
               (if opener (+ opener " ") ""))
 
-        (->> args
-          (map str)
-          (.join " ")
-          (+ opener))))
+        (+ opener
+           (.join " "
+                  (map str args)))))
 
   #@(classmethod
-      (defn -acc-lispy-repr [cls formatted-argspec args-opener]
+      (defn -acc-lispy-repr [cls acc args-opener]
         (setv [args opener] args-opener)
-        (+ formatted-argspec
-           (if (and formatted-argspec args) " " "")
-           (cls.-format-args args opener))))
+        (setv delim
+              (if (and acc args) " " ""))
+
+        (+ acc delim (cls.-format-args args opener))))
+
+  #@(property
+      (defn -arg-opener-pairs [self]
+        [[self.args None]
+         [self.defaults "&optional"]
+         [self.varargs "#*"]
+         [self.varkw "#**"]
+         [self.kwargs "&kwonly"]]))
 
   (defn --str-- [self]
-    (reduce self.-acc-lispy-repr
-            [[self.args None]
-             [self.defaults "&optional"]
-             [self.varargs "#*"]
-             [self.varkw "#**"]
-             [self.kwargs "&kwonly"]]
-            "")))
+    (reduce self.-acc-lispy-repr self.-arg-opener-pairs "")))
 
 ;; * Docstring conversion
 
 (defn -split-docs [docs]
   "Partition docs string into pre/-/post-args strings."
-  (setv [start-args
-         end-args]
+  (setv [start-args end-args]
         [(inc (.index docs "("))
          (.index docs ")")])
 
@@ -126,31 +139,37 @@
    (cut docs start-args end-args)
    (cut docs end-args)])
 
-(defn -argstring-to-param [arg]
+(defn -argstring-to-param [arg-string]
   "Convert an arg string to a Parameter."
-  (unless (in "=" arg)
-    (return (Parameter arg)))
+  (unless (in "=" arg-string)
+    (return (Parameter arg-string)))
 
   (setv [arg-name - default]
-        (.partition arg "="))
+        (.partition arg-string "="))
+
   (if (= "None" default)
       (Parameter arg-name)
       (Parameter arg-name default)))
 
-(defn -optional-arg-idx [args]
+(defn -optional-arg-idx [args-strings]
   "First idx of an arg with a default in list of args strings."
   (defn -at-arg-with-default? [idx-arg]
     (when (in "=" (second idx-arg)) (first idx-arg)))
 
-  ;; Can't use `some` since idx could be zero
-  (->> args enumerate (map -at-arg-with-default?) (remove none?) first))
+  (->> args-strings
+    enumerate
+    (map arg-with-default?)
+    (remove none?)  ; Can't use `some` since idx could be zero
+    first))
 
 (defn -insert-optional [args]
   "Insert &optional into list of args strings."
   (setv optional-idx
         (-optional-arg-idx args))
+
   (unless (none? optional-idx)
     (.insert args optional-idx "&optional"))
+
   args)
 
 (defn builtin-docs-to-lispy-docs [docs]
@@ -159,6 +178,13 @@
   (unless (and (in "(" docs) (in ")" docs))
     (return docs))
 
+  (setv replacements
+        [["..." "#* args"]
+         ["*args" "#* args"]
+         ["**kwargs" "#** kwargs"]
+         ["\n" "newline"]
+         ["-->" "- return"]])
+
   (setv [pre-args - post-args]
         (.partition docs "("))
 
@@ -166,14 +192,9 @@
   (setv [pre-args args post-args]
         (->> post-args
           (.format "{}: ({}" pre-args)
-          (reduce (fn [s old-new] (.replace s (first old-new) (second old-new)))
-                  (->
-                    [["..." "#* args"]
-                     ["*args" "#* args"]
-                     ["**kwargs" "#** kwargs"]
-                     ["\n" "newline"]
-                     ["-->" "- return"]]
-                    zip chain.from-iterable))
+          (reduce (fn [s old-new]
+                    (.replace s (first old-new) (second old-new)))
+                  replacements)
           -split-docs))
 
   ;; Format and reorder args and reconstruct the string
