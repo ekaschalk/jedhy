@@ -31,16 +31,17 @@
          (except [e TypeError]
            (raise (TypeError "Unsupported callable for hy Signature."))))
 
-    (setv [args defaults kwargs]
-          ((juxt self.-args-from self.-defaults-from self.-kwargs-from)
+    (setv [args defaults kwargs varargs varkw]
+          ((juxt self.-args-from self.-defaults-from self.-kwargs-from
+                 self.-varargs-from self.-varkw-from)
             argspec))
 
     (setv self.func func)
     (setv self.args args)
     (setv self.defaults defaults)
     (setv self.kwargs kwargs)
-    (setv self.varargs (and argspec.varargs [(hy-symbol-unmangle argspec.varargs)]))
-    (setv self.varkw (and argspec.varkw [(hy-symbol-unmangle argspec.varkw)])))
+    (setv self.varargs varargs)
+    (setv self.varkw varkw))
 
   #@(staticmethod
       (defn -parametrize [symbols &optional defaults]
@@ -97,6 +98,14 @@
           flatten
           (remove none?)
           tuple)))
+
+  #@(staticmethod
+      (defn -varargs-from [argspec]
+        (and argspec.varargs [(hy-symbol-unmangle argspec.varargs)])))
+
+  #@(staticmethod
+      (defn -varkw-from [argspec]
+        (and argspec.varkw [(hy-symbol-unmangle argspec.varkw)])))
 
   #@(staticmethod
       (defn -format-args [args opener]
