@@ -34,7 +34,6 @@
     (setv [args defaults kwargs]
           ((juxt self.-args-from self.-defaults-from self.-kwargs-from)
             argspec))
-    (setv varargs)
 
     (setv self.func func)
     (setv self.args args)
@@ -44,12 +43,14 @@
     (setv self.varkw (and argspec.varkw [(hy-symbol-unmangle argspec.varkw)])))
 
   #@(staticmethod
-      (defn -parametrize [symbols &optional [defaults (repeat None)]]
+      (defn -parametrize [symbols &optional defaults]
         "Construct many Parameter for `symbols` with possibly defaults."
         (when symbols
-          (tuple (map Parameter symbols defaults)))))
+          (tuple (map Parameter
+                      symbols
+                      (or defaults (repeat None)))))))
 
-  #@(staticmethod
+  #@(classmethod
       (defn -args-from [cls argspec]
         "Extract args without defined defaults from `argspec`."
         (setv symbols
@@ -69,8 +70,8 @@
 
         (cls.-parametrize symbols argspec.defaults)))
 
-  #@(staticmethod
-      (defn -kwargsonly-from [argspec]
+  #@(classmethod
+      (defn -kwargsonly-from [cls argspec]
         "Extract kwargs without defined defaults from `argspec`."
         (setv kwargs-with-defaults
               (.keys (or argspec.kwonlydefaults {})))
@@ -79,13 +80,14 @@
 
         (cls.-parametrize symbols)))
 
-  #@(staticmethod
-      (defn -kwonlydefaults-from [argspec]
+  #@(classmethod
+      (defn -kwonlydefaults-from [cls argspec]
         "Extract kwargs with defined defaults from `argspec`."
-        (setv [symbols defaults]
-              (zip #* (.items argspec.kwonlydefaults)))
+        (when argspec.kwonlydefaults
+          (setv [symbols defaults]
+                (zip #* (.items argspec.kwonlydefaults)))
 
-        (cls.-parametrize symbols defaults)))
+          (cls.-parametrize symbols defaults))))
 
   #@(classmethod
       (defn -kwargs-from [cls argspec]
@@ -158,7 +160,7 @@
 
   (->> args-strings
     enumerate
-    (map arg-with-default?)
+    (map -at-arg-with-default?)
     (remove none?)  ; Can't use `some` since idx could be zero
     first))
 

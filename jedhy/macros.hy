@@ -15,6 +15,10 @@
   "Partially apply a form eg. (#$(map inc) [1 2 3])."
   `(functools.partial ~@form))
 
+(deftag f [form]
+  "Flipped #$."
+  `(tz.flip ~@form))
+
 ;; * FP Macros
 
 (defmacro fn-> [&rest code]
