@@ -22,6 +22,6 @@ setup(name='jedhy',
           'jedhy': ['*.hy', '__pycache__/*'],
       },
 
-      # install_requires=[],
+      install_requires=["toolz"],
       # include_package_data=True,
       )
