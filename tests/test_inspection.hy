@@ -222,7 +222,7 @@
 
 
 (defn test-inspect-docs-instance []
-  (assert= "int: (&optional [x 0]) -> integer"
+  (assert= "int: ([x]) -> integer"
            (-> 1 Inspect (.docs))))
 
 

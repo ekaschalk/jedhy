@@ -14,10 +14,15 @@
   (defn --init-- [self &optional globals- locals-]
     (self.set-namespace globals- locals-))
 
-  (defn set-namespace [self &optional globals- locals-]
-    "Rebuild namespace according to possibly given `globals-` and `locals-`."
-    (setv self.namespace
-          (Namespace globals- locals-)))
+  (defn set-namespace [self &optional globals- locals- macros-]
+    "Rebuild namespace for possibly given `globals-`, `locals-`, and `macros-`.
+
+Typically, the values passed are:
+  globals- -> (globals)
+  locals-  -> (locals)
+  macros-  -> --macros--   *Not a typo.
+"
+    (setv self.namespace (Namespace globals- locals- macros-)))
 
   (defn complete [self prefix-str]
     "Completions for a prefix string."

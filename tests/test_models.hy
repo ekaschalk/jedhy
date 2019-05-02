@@ -16,19 +16,23 @@
 
 
 (defn test-namespace-user-macros []
-  ;; Due to how Hy compiles macros, we can't assert-not-in before the defmacro
   (defmacro foo-macro [x])
+
+  (assert-not-in "foo-macro"
+                 (. (Namespace) macros))
   (assert-in "foo-macro"
-             (. (Namespace) macros)))
+             (. (Namespace :macros- --macros--) macros)))
 
 
 (defn test-namespace-imported-macros []
+  ;; TODO This test should have another part where I import a macro
+  ;; that was not imported within the Namespace's parent file.
   (assert-in "ap-map"
              (. (Namespace) macros)))
 
 
 (defn test-namespace-compiler []
-  (assert-all-in ["try" "for*" "+=" "require"]
+  (assert-all-in ["try" "+=" "require"]
                  (. (Namespace) compile-table)))
 
 

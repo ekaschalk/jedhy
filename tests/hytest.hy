@@ -9,6 +9,9 @@
 (defn assert-in [x y]
   (assert (in x y)))
 
+(defn assert-not-in [x y]
+  (assert (not-in x y)))
+
 (defn assert-all-in [x y]
   (assert (->> x (map (fn [z] (in z y))) all)))
 

@@ -4,9 +4,9 @@
 (import inspect hy)
 
 (try
-  (import [hy.lex.parser [hy-symbol-unmangle]])
+  (import [hy.lex [hy-symbol-unmangle]])
   (except [e ImportError]
-    (import [hy.lex.parser [unmangle :as hy-symbol-unmangle]])))
+    (import [hy.lex [unmangle :as hy-symbol-unmangle]])))
 
 ;; * Parameters
 

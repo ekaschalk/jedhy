@@ -4,16 +4,17 @@
 (import
   builtins
 
-  hy hy.compiler hy.macros
+  hy hy.compiler
+  ;; hy.macros
   [hy.core.language [*]] [hy.core.macros [*]]  ; for Namespace's defaults
   )
 
 (try
-   (import [hy.lex.parser [hy-symbol-unmangle
-                           hy-symbol-mangle :as mangle]])
+   (import [hy.lex [hy-symbol-unmangle
+                    hy-symbol-mangle :as mangle]])
    (except [e ImportError]
-     (import [hy.lex.parser [unmangle :as hy-symbol-unmangle
-                             mangle]])))
+     (import [hy.lex [unmangle :as hy-symbol-unmangle
+                      mangle]])))
 (try
   (import [hy.compiler [-compile-table]])
   (except [e ImportError]
@@ -34,16 +35,13 @@
 (hy.eval `(require [hy.extra.anaphoric [*]]))
 
 (defclass Namespace [object]
-  (defn --init-- [self &optional globals- locals-]
-    (setv self.globals
-          (or globals- (globals)))
-    (setv self.locals
-          (or locals- (locals)))
+  (defn --init-- [self &optional globals- locals- macros-]
+    (setv self.globals (or globals- (globals)))
+    (setv self.locals (or locals- (locals)))
+    (setv self.macros (tz.keymap hy-symbol-unmangle (or macros- --macros--)))
 
     (setv self.compile-table
           (.-collect-compile-table self))
-    (setv self.macros
-          (.-collect-macros self))
     (setv self.shadows
           (.-collect-shadows self))
 
@@ -59,13 +57,6 @@
   (defn -collect-compile-table [self]
     "Collect compile table as dict."
     (tz.keymap self.-keys-to-names -compile-table))
-
-  (defn -collect-macros [self]
-    "Collect and merge macros from all namespaces as single dict."
-    (->> hy.macros.-hy-macros
-      (.values)
-      (#%(merge-with (fn [a b] a) #* %1))
-      (tz.keymap self.-keys-to-names)))
 
   (defn -collect-shadows [self]
     "Collect shadows as a list, purely for annotation checks."
@@ -87,12 +78,9 @@
 
   (defn eval [self mangled-symbol]
     "Evaluate `mangled-symbol' within the Namespace."
-    (try (hy.eval (read-str mangled-symbol)
-                  :namespace self.globals)
+    (try (hy.eval (read-str mangled-symbol) :locals self.globals)
          (except [e NameError]
-
-           (try (hy.eval (read-str mangled-symbol)
-                         :namespace self.locals)
+           (try (hy.eval (read-str mangled-symbol) :locals self.locals)
                 (except [] None))))))
 
 ;; * Candidate
@@ -190,12 +178,10 @@
 
   (defn --init-- [self prefix &optional namespace]
     (setv self.prefix prefix)
-    (setv self.namespace
-          (or namespace (Namespace)))
+    (setv self.namespace (or namespace (Namespace)))
 
-    (setv [self.candidate
-           self.attr-prefix]
-          (.split-prefix self prefix self.namespace)))
+    (setv [self.candidate self.attr-prefix]
+          (self.split-prefix prefix self.namespace)))
 
   (defn --repr-- [self]
     (.format "Prefix<(prefix={})>" self.prefix))
@@ -237,8 +223,8 @@
           (or (.attributes self.candidate) self.namespace.names))
 
     (->> candidates
-      (filter #f(str.startswith self.attr-prefix))
-      (map #%(if self.candidate
-                 (+ (str self.candidate) "." %1)
-                 %1))
-      tuple)))
+       (filter #f(str.startswith self.attr-prefix))
+       (map #%(if self.candidate
+                  (+ (str self.candidate) "." %1)
+                  %1))
+       tuple)))
