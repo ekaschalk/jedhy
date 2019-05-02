@@ -1,14 +1,16 @@
 "Expose jedhy's `API` for IDE and metaprogramming use-cases."
 
+;; * Imports
+
 (require [jedhy.macros [*]])
 (import [jedhy.macros [*]])
-(require [hy.extra.anaphoric [*]])
-(import
-  [jedhy.inspection [Inspect]]
-  [jedhy.models [Candidate Namespace Prefix]])
 
+(import [jedhy.inspection [Inspect]]
+        [jedhy.models [Candidate
+                       Namespace
+                       Prefix]])
 
-;; * Actions
+;; * API
 
 (defclass API [object]
   (defn --init-- [self &optional globals- locals-]
@@ -20,8 +22,7 @@
 Typically, the values passed are:
   globals- -> (globals)
   locals-  -> (locals)
-  macros-  -> --macros--   *Not a typo.
-"
+  macros-  -> --macros--"
     (setv self.namespace (Namespace globals- locals- macros-)))
 
   (defn complete [self prefix-str]

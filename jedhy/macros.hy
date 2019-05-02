@@ -1,7 +1,20 @@
+"Some general purpose imports and code."
+
+;; * Imports
+
 (require [hy.extra.anaphoric [*]])
 
 (import functools
-        [toolz.curried :as tz])
+        [toolz.curried :as tz]
+
+        [hy.lex [unmangle
+                 mangle :as unfixed-mangle]])
+
+;; * Hy Overwrites
+
+;; We have different requirements in the empty string case
+(defn mangle [s]
+  (if (!= s "") (unfixed-mangle s) (str)))
 
 ;; * Tag Macros
 
@@ -16,16 +29,6 @@
 (deftag f [form]
   "Flipped #$."
   `(tz.flip ~@form))
-
-;; * FP Macros
-
-(defmacro fn-> [&rest code]
-  "Thread first an anonymous function."
-  `#%(-> %1 ~@code))
-
-(defmacro fn->> [&rest code]
-  "Thread last an anonymous function."
-  `#%(->> %1 ~@code))
 
 ;; * Misc
 
@@ -43,7 +46,4 @@
          tz.concat)))
 
 (defn allkeys [d]
-  (->> d
-    -allkeys
-    (map last)
-    tuple))
+  (->> d -allkeys (map last) tuple))

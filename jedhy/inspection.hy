@@ -1,18 +1,18 @@
+"Implements argspec inspection and formatting for various types."
+
+;; * Imports
+
 (require [jedhy.macros [*]])
 (import [jedhy.macros [*]])
-(require [hy.extra.anaphoric [*]])
-(import inspect hy)
 
-(try
-  (import [hy.lex [hy-symbol-unmangle]])
-  (except [e ImportError]
-    (import [hy.lex [unmangle :as hy-symbol-unmangle]])))
+(import inspect
+        hy)
 
 ;; * Parameters
 
 (defclass Parameter [object]
   (defn --init-- [self symbol &optional default]
-    (setv self.symbol (hy-symbol-unmangle symbol))
+    (setv self.symbol (unmangle symbol))
     (setv self.default default))
 
   (defn --str-- [self]
@@ -24,22 +24,19 @@
 
 (defclass Signature [object]
   (defn --init-- [self func]
-    (try (setv argspec
-               (inspect.getfullargspec func))
+    (try (setv argspec (inspect.getfullargspec func))
          (except [e TypeError]
            (raise (TypeError "Unsupported callable for hy Signature."))))
 
-    (setv [args defaults kwargs varargs varkw]
+    (setv self.func func)
+    (setv [self.args
+           self.defaults
+           self.kwargs
+           self.varargs
+           self.varkw]
           ((juxt self.-args-from self.-defaults-from self.-kwargs-from
                  self.-varargs-from self.-varkw-from)
-            argspec))
-
-    (setv self.func func)
-    (setv self.args args)
-    (setv self.defaults defaults)
-    (setv self.kwargs kwargs)
-    (setv self.varargs varargs)
-    (setv self.varkw varkw))
+           argspec)))
 
   #@(staticmethod
       (defn -parametrize [symbols &optional defaults]
@@ -52,30 +49,26 @@
   #@(classmethod
       (defn -args-from [cls argspec]
         "Extract args without defined defaults from `argspec`."
-        (setv symbols
-              (drop-last (len (or argspec.defaults []))
-                         argspec.args))
+        (setv symbols (drop-last (len (or argspec.defaults []))
+                                 argspec.args))
 
         (cls.-parametrize symbols)))
 
   #@(classmethod
       (defn -defaults-from [cls argspec]
         "Extract args with defined defaults from `argspec`."
-        (setv args-without-defaults
-              (cls.-args-from argspec))
-        (setv symbols
-              (drop (len args-without-defaults)
-                    argspec.args))
+        (setv args-without-defaults (cls.-args-from argspec))
+        (setv symbols (drop (len args-without-defaults)
+                            argspec.args))
 
         (cls.-parametrize symbols argspec.defaults)))
 
   #@(classmethod
       (defn -kwargsonly-from [cls argspec]
         "Extract kwargs without defined defaults from `argspec`."
-        (setv kwargs-with-defaults
-              (.keys (or argspec.kwonlydefaults {})))
-        (setv symbols
-              (remove #f(in kwargs-with-defaults) argspec.kwonlyargs))
+        (setv kwargs-with-defaults (.keys (or argspec.kwonlydefaults {})))
+        (setv symbols (remove #f(in kwargs-with-defaults)
+                              argspec.kwonlyargs))
 
         (cls.-parametrize symbols)))
 
@@ -83,8 +76,7 @@
       (defn -kwonlydefaults-from [cls argspec]
         "Extract kwargs with defined defaults from `argspec`."
         (when argspec.kwonlydefaults
-          (setv [symbols defaults]
-                (zip #* (.items argspec.kwonlydefaults)))
+          (setv [symbols defaults] (zip #* (.items argspec.kwonlydefaults)))
 
           (cls.-parametrize symbols defaults))))
 
@@ -99,62 +91,57 @@
 
   #@(staticmethod
       (defn -varargs-from [argspec]
-        (and argspec.varargs [(hy-symbol-unmangle argspec.varargs)])))
+        (and argspec.varargs [(unmangle argspec.varargs)])))
 
   #@(staticmethod
       (defn -varkw-from [argspec]
-        (and argspec.varkw [(hy-symbol-unmangle argspec.varkw)])))
+        (and argspec.varkw [(unmangle argspec.varkw)])))
 
   #@(staticmethod
       (defn -format-args [args opener]
         (unless args
           (return ""))
 
-        (setv opener
-              (if opener (+ opener " ") ""))
+        (setv args (map str args))
+        (setv opener (if opener (+ opener " ") (str)))
 
-        (+ opener
-           (.join " "
-                  (map str args)))))
+        (+ opener (.join " " args))))
 
   #@(classmethod
       (defn -acc-lispy-repr [cls acc args-opener]
         (setv [args opener] args-opener)
-        (setv delim
-              (if (and acc args) " " ""))
+        (setv delim (if (and acc args) " " (str)))
 
         (+ acc delim (cls.-format-args args opener))))
 
   #@(property
       (defn -arg-opener-pairs [self]
-        [[self.args None]
+        [[self.args     None]
          [self.defaults "&optional"]
-         [self.varargs "#*"]
-         [self.varkw "#**"]
-         [self.kwargs "&kwonly"]]))
+         [self.varargs  "#*"]
+         [self.varkw    "#**"]
+         [self.kwargs   "&kwonly"]]))
 
   (defn --str-- [self]
-    (reduce self.-acc-lispy-repr self.-arg-opener-pairs "")))
+    (reduce self.-acc-lispy-repr self.-arg-opener-pairs (str))))
 
 ;; * Docstring conversion
 
 (defn -split-docs [docs]
   "Partition docs string into pre/-/post-args strings."
-  (setv [start-args end-args]
-        [(inc (.index docs "("))
-         (.index docs ")")])
+  (setv arg-start (inc (.index docs "(")))
+  (setv arg-end (.index docs ")"))
 
-  [(cut docs 0 start-args)
-   (cut docs start-args end-args)
-   (cut docs end-args)])
+  [(cut docs 0 arg-start)
+   (cut docs arg-start arg-end)
+   (cut docs arg-end)])
 
 (defn -argstring-to-param [arg-string]
   "Convert an arg string to a Parameter."
   (unless (in "=" arg-string)
     (return (Parameter arg-string)))
 
-  (setv [arg-name - default]
-        (.partition arg-string "="))
+  (setv [arg-name - default] (.partition arg-string "="))
 
   (if (= "None" default)
       (Parameter arg-name)
@@ -173,8 +160,7 @@
 
 (defn -insert-optional [args]
   "Insert &optional into list of args strings."
-  (setv optional-idx
-        (-optional-arg-idx args))
+  (setv optional-idx (-optional-arg-idx args))
 
   (unless (none? optional-idx)
     (.insert args optional-idx "&optional"))
@@ -184,18 +170,17 @@
 (defn builtin-docs-to-lispy-docs [docs]
   "Convert built-in-styled docs string into a lispy-format."
   ;; Check if docs is non-standard
-  (unless (and (in "(" docs) (in ")" docs))
+  (unless (and (in "(" docs)
+               (in ")" docs))
     (return docs))
 
-  (setv replacements
-        [["..." "#* args"]
-         ["*args" "#* args"]
-         ["**kwargs" "#** kwargs"]
-         ["\n" "newline"]
-         ["-->" "- return"]])
+  (setv replacements [["..." "#* args"]
+                      ["*args" "#* args"]
+                      ["**kwargs" "#** kwargs"]
+                      ["\n" "newline"]
+                      ["-->" "- return"]])
 
-  (setv [pre-args - post-args]
-        (.partition docs "("))
+  (setv [pre-args - post-args] (.partition docs "("))
 
   ;; Format before args and perform unconditional conversions
   (setv [pre-args args post-args]
@@ -226,14 +211,19 @@
 
   #@(property
       (defn -docs-first-line [self]
-        (or (and self.obj.--doc-- (-> self.obj.--doc-- (.splitlines) first)) "")))
+        (or (and self.obj.--doc--
+                 (-> self.obj.--doc-- (.splitlines) first))
+            "")))
 
   #@(property
       (defn -args-docs-delim [self]
-        (or (and self.obj.--doc-- " - ") "")))
+        (or (and self.obj.--doc--
+                 " - ")
+            "")))
 
   (defn -cut-obj-name-maybe [self docs]
-    (if (or self.class? self.method-wrapper?)
+    (if (or self.class?
+            self.method-wrapper?)
         (-> docs
           (.replace "self " "")
           (.replace "self" ""))
@@ -254,7 +244,7 @@
 
   #@(property
       (defn obj-name [self]
-        (hy-symbol-unmangle self.obj.--name--)))
+        (unmangle self.obj.--name--)))
 
   #@(property
       (defn lambda? [self]
@@ -279,8 +269,7 @@
          (except [e TypeError] None)))
 
   (defn docs [self]
-    (setv signature
-          (.signature self))
+    (setv signature (.signature self))
 
     (self.-format-docs
       (if signature

@@ -1,11 +1,11 @@
 (require [jedhy.macros [*]])
-(require [hy.extra.anaphoric [*]])
+(import [jedhy.macros [*]])
 (require [tests.hytest [*]])
 (import [tests.hytest [*]])
 
-(import
-  [jedhy.models [Candidate Namespace Prefix]])
-
+(import [jedhy.models [Candidate
+                       Namespace
+                       Prefix]])
 
 ;; * Namespace
 ;; ** Components
@@ -116,18 +116,15 @@
 ;; ** Compiler
 
 (defn test-candidate-compiler []
-  (setv compiler?
-        (fn-> Candidate (.compiler?)))
-
   (assert (->> "doesn't exist"
-            compiler?
-            none?)))
+             Candidate
+             (.compiler?)
+             none?)))
 
 ;; ** Shadows
 
 (defn test-candidate-shadow []
-  (setv shadow?
-        (fn-> Candidate (.shadow?)))
+  (setv shadow? (fn [x] (.shadow? (Candidate x))))
 
   (assert (->> ["get" "is" "is_not"]
             (map shadow?)
