@@ -1,16 +1,49 @@
 * Jedhy
 
-~jedhy~ is a static code analysis tool providing autocompletion and
-documentation introspection for [[https://github.com/hylang/hy][Hy]], a lisp embedded in Python.
+~jedhy~ provides autocompletion, documentation introspection and formatting, and
+other tools useful to IDEs for [[https://github.com/hylang/hy][Hy]], a lisp embedded in Python.
 
 Leveraged in Emacs [[https://github.com/hylang/hy-mode][hy-mode]] IDE which I maintain.
 
-Current Features:
-1. Complete macros, compile table, and all standard python constructs with
-   mangling handled.
+* Features
+
+1. Completes:
+   1. All standard python constructs (builtins, user-defined funcs, modules, etc.)
+   2. Hy constructs (macros, shadowed operators, compile table)
+   3. All of the above with Hy's mangling rules handled.
 2. Documentation introspection and formatting (eg. for Emacs ~Eldoc mode~).
 3. Annotations (eg. for Emacs ~Company mode~).
 
-Jedhy is fully tested. See tests for examples.
+Jedhy is fully tested. The tests folder is the easiest way to see example usage.
 
-See ~jedhy.api~ for usage.
+See ~jedhy.api~, the simple entry point.
+
+NOTE: Hy devs love to break this library. Working for: Hy 0.16.0
+
+** Example Usage
+
+#+BEGIN_SRC lisp
+(setv jedhy (jedhy.api.API))
+
+;; Add some stuff to namespace
+(import [numpy :as np])
+(import itertools)
+(defclass Foo [object] "A class\nDetails..." (defn --init-- [self x y]))
+(defmacro foo-macro [x])
+
+(jedhy.set-namespace :locals- (locals) :macros- --macros--)
+
+;; COMPLETION
+(jedhy.complete "pr")     ; print
+(jedhy.complete "print.") ; print.--call--, print.--str--, ...
+(jedhy.complete "np.a")   ; np.add, np.array, ...
+(jedhy.complete "foo-")   ; foo-macro
+
+;; DOCS
+(jedhy.docs "itertools")  ; "Functional tools for creating and using iterators."
+(jedhy.docs "Foo")        ; "Foo: (x y) - A class"
+
+;; ANNOTATION
+(jedhy.annotate "itertools") ; <module itertools>
+(jedhy.annotate "try")       ; <compiler itertools>
+#+END_SRC
