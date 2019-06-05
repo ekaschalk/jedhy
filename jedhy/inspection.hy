@@ -261,7 +261,13 @@
         "Is object of type 'method-wrapper'?"
         (instance? (type print.--str--) self.obj)))
 
-;; ** Actions
+  #@(property
+      (defn compile-table? [self]
+        "Is object a Hy compile table construct?"
+        (= self.-docs-first-line
+           "Built-in immutable sequence.")))
+
+  ;; ** Actions
 
   (defn signature [self]
     "Return object's signature if it exists."
@@ -269,13 +275,17 @@
          (except [e TypeError] None)))
 
   (defn docs [self]
-    (setv signature (.signature self))
+    "Formatted first line docs for object."
+    (setv signature (self.signature))
 
     (self.-format-docs
-      (if signature
-          (.format "{name}: ({args}){delim}{docs}"
-                   :name self.obj-name
-                   :args signature
-                   :delim self.-args-docs-delim
-                   :docs self.-docs-first-line)
-          (builtin-docs-to-lispy-docs self.-docs-first-line)))))
+      (cond [(and signature (not self.compile-table?))
+             (.format "{name}: ({args}){delim}{docs}"
+                      :name self.obj-name
+                      :args signature
+                      :delim self.-args-docs-delim
+                      :docs self.-docs-first-line)]
+            [self.compile-table?
+             "Compile table"]
+            [True
+             (builtin-docs-to-lispy-docs self.-docs-first-line)]))))
