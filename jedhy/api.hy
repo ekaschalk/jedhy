@@ -41,10 +41,17 @@ Typically, the values passed are:
       (Candidate :namespace self.namespace)
       (.annotate)))
 
+  (defn -inspect [self candidate-str]
+    "Inspect a candidate string."
+    (-> candidate-str
+       (Candidate :namespace self.namespace)
+       (.get-obj)
+       Inspect))
+
   (defn docs [self candidate-str]
     "Docstring for a candidate string."
-    (-> candidate-str
-      (Candidate :namespace self.namespace)
-      (.get-obj)
-      Inspect
-      (.docs))))
+    (-> candidate-str self.-inspect (.docs)))
+
+  (defn full-docs [self candidate-str]
+    "Full documentation for a candidate string."
+    (-> candidate-str self.-inspect (.full-docs))))

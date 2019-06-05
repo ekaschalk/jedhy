@@ -1,5 +1,7 @@
 * Jedhy
 
+/Last Hy version verified working for: Hy 0.16.0/
+
 ~jedhy~ provides autocompletion, documentation introspection and formatting, and
 other tools useful to IDEs for [[https://github.com/hylang/hy][Hy]], a lisp embedded in Python.
 
@@ -17,8 +19,6 @@ Leveraged in Emacs [[https://github.com/hylang/hy-mode][hy-mode]] IDE which I ma
 Jedhy is fully tested. The tests folder is the easiest way to see example usage.
 
 See ~jedhy.api~, the simple entry point.
-
-NOTE: Hy devs love to break this library. Working for: Hy 0.16.0
 
 ** Example Usage
 

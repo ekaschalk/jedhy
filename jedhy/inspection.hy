@@ -216,6 +216,12 @@
             "")))
 
   #@(property
+      (defn -docs-rest-lines [self]
+        (or (and self.obj.--doc--
+                 (->> self.obj.--doc-- (.splitlines) rest (.join "\n")))
+            "")))
+
+  #@(property
       (defn -args-docs-delim [self]
         (or (and self.obj.--doc--
                  " - ")
@@ -288,4 +294,14 @@
             [self.compile-table?
              "Compile table"]
             [True
-             (builtin-docs-to-lispy-docs self.-docs-first-line)]))))
+             (builtin-docs-to-lispy-docs self.-docs-first-line)])))
+
+  (defn full-docs [self]
+    "Formatted full docs for object."
+    ;; TODO There are builtins to format the -docs-rest-lines part I should use
+    (unless self.compile-table?
+      (if self.-docs-rest-lines
+          (.format "{}\n\n{}"
+                   (self.docs)
+                   self.-docs-rest-lines)
+          (self.docs)))))
