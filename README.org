@@ -42,8 +42,9 @@ See ~jedhy.api~, the simple entry point.
 ;; DOCS
 (jedhy.docs "itertools")  ; "Functional tools for creating and using iterators."
 (jedhy.docs "Foo")        ; "Foo: (x y) - A class"
+(jedhy.full-docs "Foo")   ; "Foo: (x y) - A class\nDetails..."
 
 ;; ANNOTATION
 (jedhy.annotate "itertools") ; <module itertools>
-(jedhy.annotate "try")       ; <compiler itertools>
+(jedhy.annotate "try")       ; <compiler try>
 #+END_SRC
