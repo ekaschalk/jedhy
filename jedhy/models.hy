@@ -69,6 +69,10 @@
 
   (defn eval [self mangled-symbol]
     "Evaluate `mangled-symbol' within the Namespace."
+    ;; Short circuit a common case (completing without "." present at all)
+    (when (not mangled-symbol)
+      (return None))
+
     (setv hy-tree (read-str mangled-symbol))
 
     (try (hy.eval hy-tree :locals self.globals)
@@ -89,6 +93,10 @@
 
   (defn --repr-- [self]
     (.format "Candidate<(symbol={}>)" self.symbol))
+
+  (defn --eq-- [self other]
+    (when (instance? Candidate other)
+      (= self.symbol other.symbol)))
 
   (defn --bool-- [self]
     (bool self.symbol))
@@ -170,7 +178,9 @@
     (setv self.namespace (or namespace (Namespace)))
 
     (setv self.candidate (self.-prefix->candidate prefix self.namespace))
-    (setv self.attr-prefix (self.-prefix->attr-prefix prefix)))
+    (setv self.attr-prefix (self.-prefix->attr-prefix prefix))
+
+    (setv self.completions (tuple)))
 
   (defn --repr-- [self]
     (.format "Prefix<(prefix={})>" self.prefix))
@@ -207,17 +217,22 @@
         (+ (str self.candidate) "." completion)
         completion))
 
-  (defn complete [self]
+  (defn complete [self &optional cached-prefix]
     "Get candidates for a given Prefix."
     ;; Short circuit the case: "1+nonsense.real-attr" eg. "foo.--prin"
-    (when (and (not self.obj?)
-               self.has-attr?)
-      (return (tuple)))
+    (when (and self.has-attr?  ; The and ordering here matters for speed
+               (not self.obj?))
+      (setv self.completions (tuple))
+      (return self.completions))
 
     ;; Complete on relevant top-level names or candidate-dependent names
-    (->>
-      (or (.attributes self.candidate)
-          self.namespace.names)
-      (filter #f(str.startswith self.attr-prefix))
-      (map self.complete-candidate)
-      tuple)))
+    (if (and cached-prefix
+             (= self.candidate cached-prefix.candidate))
+        (setv self.completions cached-prefix.completions)
+        (setv self.completions (or (.attributes self.candidate)
+                                   self.namespace.names)))
+
+    (->> self.completions
+       (filter #f(str.startswith self.attr-prefix))
+       (map self.complete-candidate)
+       tuple)))
