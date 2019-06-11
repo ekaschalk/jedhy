@@ -7,6 +7,8 @@ other tools useful to IDEs for [[https://github.com/hylang/hy][Hy]], a lisp embe
 
 Leveraged in Emacs [[https://github.com/hylang/hy-mode][hy-mode]] IDE which I maintain.
 
+Install from pypi ~pip install jedhy~.
+
 * Features
 
 1. Completes:
