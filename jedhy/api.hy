@@ -13,8 +13,8 @@
 ;; * API
 
 (defclass API [object]
-  (defn --init-- [self &optional globals- locals-]
-    (self.set-namespace globals- locals-)
+  (defn --init-- [self &optional globals- locals- macros-]
+    (self.set-namespace globals- locals- macros-)
 
     (setv self.-cached-prefix None))
 
