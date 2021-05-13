@@ -11,11 +11,11 @@
 ;; * Parameters
 
 (defclass Parameter [object]
-  (defn --init-- [self symbol &optional default]
+  (defn __init__ [self symbol [default None]]
     (setv self.symbol (unmangle symbol))
     (setv self.default default))
 
-  (defn --str-- [self]
+  (defn __str__ [self]
     (if (none? self.default)
         self.symbol
         (.format "[{} {}]" self.symbol self.default))))
@@ -23,7 +23,7 @@
 ;; * Signature
 
 (defclass Signature [object]
-  (defn --init-- [self func]
+  (defn __init__ [self func]
     (try (setv argspec (inspect.getfullargspec func))
          (except [e TypeError]
            (raise (TypeError "Unsupported callable for hy Signature."))))
@@ -39,7 +39,7 @@
            argspec)))
 
   #@(staticmethod
-      (defn -parametrize [symbols &optional defaults]
+      (defn -parametrize [symbols [defaults None]]
         "Construct many Parameter for `symbols` with possibly defaults."
         (when symbols
           (tuple (map Parameter
@@ -122,7 +122,7 @@
          [self.varkw    "#**"]
          [self.kwargs   "&kwonly"]]))
 
-  (defn --str-- [self]
+  (defn __str__ [self]
     (reduce self.-acc-lispy-repr self.-arg-opener-pairs (str))))
 
 ;; * Docstring conversion
@@ -206,24 +206,24 @@
 ;; ** Internal
 
 (defclass Inspect [object]
-  (defn --init-- [self obj]
+  (defn __init__ [self obj]
     (setv self.obj obj))
 
   #@(property
       (defn -docs-first-line [self]
-        (or (and self.obj.--doc--
-                 (-> self.obj.--doc-- (.splitlines) first))
+        (or (and self.obj.__doc__
+                 (-> self.obj.__doc__ (.splitlines) first))
             "")))
 
   #@(property
       (defn -docs-rest-lines [self]
-        (or (and self.obj.--doc--
-                 (->> self.obj.--doc-- (.splitlines) rest (.join "\n")))
+        (or (and self.obj.__doc__
+                 (->> self.obj.__doc__ (.splitlines) rest (.join "\n")))
             "")))
 
   #@(property
       (defn -args-docs-delim [self]
-        (or (and self.obj.--doc--
+        (or (and self.obj.__doc__
                  " - ")
             "")))
 
@@ -250,7 +250,7 @@
 
   #@(property
       (defn obj-name [self]
-        (unmangle self.obj.--name--)))
+        (unmangle self.obj.__name__)))
 
   #@(property
       (defn lambda? [self]
@@ -265,7 +265,7 @@
   #@(property
       (defn method-wrapper? [self]
         "Is object of type 'method-wrapper'?"
-        (instance? (type print.--str--) self.obj)))
+        (isinstance self.obj (type print.__str__))))
 
   #@(property
       (defn compile-table? [self]

@@ -9,9 +9,9 @@
         hy
         hy.compiler
         hy.macros
-        [hy.compiler [-special-form-compilers :as -compile-table]]
+        [hy.compiler [_special_form_compilers :as -compile-table]]
 
-        ;; Below imports populate --macros-- for Namespace
+        ;; Below imports populate __macros__ for Namespace
         [hy.core.language [*]]
         [hy.core.macros [*]])
 
@@ -26,11 +26,11 @@
 ;; * Namespace
 
 (defclass Namespace [object]
-  (defn --init-- [self &optional globals- locals- macros-]
+  (defn __init__ [self [globals- None] [locals- None] [macros- None]]
     ;; Components
     (setv self.globals       (or globals- (globals)))
     (setv self.locals        (or locals- (locals)))
-    (setv self.macros        (tz.keymap unmangle (or macros- --macros--)))
+    (setv self.macros        (tz.keymap unmangle (or macros- __macros__)))
     (setv self.compile-table (self.-collect-compile-table))
     (setv self.shadows       (self.-collect-shadows))
 
@@ -40,9 +40,9 @@
   #@(staticmethod
       (defn -to-names [key]
         "Function for converting keys (strs, functions, modules...) to names."
-        (unmangle (if (instance? str key)
+        (unmangle (if (string? key)
                       key
-                      key.--name--))))
+                      key.__name__))))
 
   (defn -collect-compile-table [self]
     "Collect compile table as dict."
@@ -83,22 +83,22 @@
 ;; * Candidate
 
 (defclass Candidate [object]
-  (defn --init-- [self symbol &optional namespace]
+  (defn __init__ [self symbol [namespace None]]
     (setv self.symbol    (unmangle symbol))
     (setv self.mangled   (mangle symbol))
     (setv self.namespace (or namespace (Namespace))))
 
-  (defn --str-- [self]
+  (defn __str__ [self]
     self.symbol)
 
-  (defn --repr-- [self]
+  (defn __repr__ [self]
     (.format "Candidate<(symbol={}>)" self.symbol))
 
-  (defn --eq-- [self other]
-    (when (instance? Candidate other)
+  (defn __eq__ [self other]
+    (when (isinstance other Candidate)
       (= self.symbol other.symbol)))
 
-  (defn --bool-- [self]
+  (defn __bool__ [self]
     (bool self.symbol))
 
   (defn compiler? [self]
@@ -158,7 +158,7 @@
                             "shadowed"]
 
                            [obj?
-                            (self.-translate-class obj.--class--.--name--)]
+                            (self.-translate-class obj.__class__.__name__)]
 
                            [(.compiler? self)
                             "compiler"]
@@ -173,7 +173,7 @@
 (defclass Prefix [object]
   "A completion candidate."
 
-  (defn --init-- [self prefix &optional namespace]
+  (defn __init__ [self prefix [namespace None]]
     (setv self.prefix prefix)
     (setv self.namespace (or namespace (Namespace)))
 
@@ -182,7 +182,7 @@
 
     (setv self.completions (tuple)))
 
-  (defn --repr-- [self]
+  (defn __repr__ [self]
     (.format "Prefix<(prefix={})>" self.prefix))
 
   #@(staticmethod
@@ -217,9 +217,9 @@
         (+ (str self.candidate) "." completion)
         completion))
 
-  (defn complete [self &optional cached-prefix]
+  (defn complete [self [cached-prefix None]]
     "Get candidates for a given Prefix."
-    ;; Short circuit the case: "1+nonsense.real-attr" eg. "foo.--prin"
+    ;; Short circuit the case: "1+nonsense.real-attr" eg. "foo.__prin"
     (when (and self.has-attr?  ; The and ordering here matters for speed
                (not self.obj?))
       (setv self.completions (tuple))
