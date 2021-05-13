@@ -1,6 +1,6 @@
 * Jedhy
 
-/Last Hy version verified working for: Hy 0.16.0/
+/Last Hy version verified working for: Hy 1.0a1/
 
 ~jedhy~ provides autocompletion, documentation introspection and formatting, and
 other tools useful to IDEs for [[https://github.com/hylang/hy][Hy]], a lisp embedded in Python.
