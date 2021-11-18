@@ -9,7 +9,7 @@
         hy
         hy.compiler
         hy.macros
-        [hy.compiler [_special_form_compilers :as -compile-table]]
+        ;; [hy.compiler [_special_form_compilers :as -compile-table]]
 
         ;; Below imports populate __macros__ for Namespace
         [hy.core.language [*]]
@@ -31,7 +31,7 @@
     (setv self.globals       (or globals- (globals)))
     (setv self.locals        (or locals- (locals)))
     (setv self.macros        (tz.keymap unmangle (or macros- __macros__)))
-    (setv self.compile-table (self.-collect-compile-table))
+    ;; (setv self.compile-table (self.-collect-compile-table))
     (setv self.shadows       (self.-collect-shadows))
 
     ;; Collected
@@ -62,7 +62,8 @@
       (chain (allkeys self.globals)
              (allkeys self.locals)
              (.keys self.macros)
-             (.keys self.compile-table))
+            ;;  (.keys self.compile-table)
+             )
       (map self.-to-names)
       distinct
       tuple))
@@ -101,10 +102,10 @@
   (defn __bool__ [self]
     (bool self.symbol))
 
-  (defn compiler? [self]
-    "Is candidate a compile table construct and return it."
-    (try (get self.namespace.compile-table self.symbol)
-         (except [e KeyError] None)))
+  ;; (defn compiler? [self]
+  ;;   "Is candidate a compile table construct and return it."
+  ;;   (try (get self.namespace.compile-table self.symbol)
+  ;;        (except [e KeyError] None)))
 
   (defn macro? [self]
     "Is candidate a macro and return it."
@@ -127,7 +128,8 @@
     ;; both shadowed and in the compile table as shadowed (eg. `+`)
     (or (self.macro?)
         (self.evaled?)
-        (self.compiler?)))
+        ;; (self.compiler?)
+        ))
 
   (defn attributes [self]
     "Return attributes for obj if they exist."
@@ -151,7 +153,7 @@
   (defn annotate [self]
     "Return annotation for a candidate."
     (setv obj (self.evaled?))
-    (setv obj? (not (none? obj)))  ; Obj could be instance of bool
+    (setv obj? (not (is obj None)))  ; Obj could be instance of bool
 
     ;; Shadowed takes first priority but compile table takes last priority
     (setv annotation (cond [(self.shadow?)
@@ -160,8 +162,8 @@
                            [obj?
                             (self.-translate-class obj.__class__.__name__)]
 
-                           [(.compiler? self)
-                            "compiler"]
+                          ;;  [(.compiler? self)
+                          ;;   "compiler"]
 
                            [(.macro? self)
                             "macro"]))

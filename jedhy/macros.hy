@@ -11,6 +11,20 @@
         [hy.lex [unmangle
                  mangle :as unfixed-mangle]])
 
+
+;; * 1.0a3 workaround
+(defn second [form]
+  (get form 1))
+
+(defn first [form]
+  (if form (get form 0)))
+
+(defn none? [form]
+  (is form None))
+
+(defn string? [form]
+  (isinstance form str))
+
 ;; * Hy Overwrites
 
 ;; We have different requirements in the empty string case

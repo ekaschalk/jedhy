@@ -1,6 +1,8 @@
 * Jedhy
 
-/Last Hy version verified working for: Hy 1.0a1/
+/Only Hy version verified working for: Hy 1.0a3/
+you also need to change hy-jedhy.el in hymode.
+checkout https://github.com/jinhan23/hy-mode
 
 ~jedhy~ provides autocompletion, documentation introspection and formatting, and
 other tools useful to IDEs for [[https://github.com/hylang/hy][Hy]], a lisp embedded in Python.
