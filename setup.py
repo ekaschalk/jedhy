@@ -14,7 +14,7 @@ setup(name='jedhy',
       maintainer=__AUTHOR__,
       maintainer_email=__AUTHOR_EMAIL__,
       url='https://github.com/ekaschalk/jedhy',
-      license='MIT',
+      license='Python Software Foundation License Version 2',
       keywords='python hy completion introspection refactoring emacs vim',
 
       packages=["jedhy", "jedhy"],
